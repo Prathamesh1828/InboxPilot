@@ -1,23 +1,31 @@
 from app.db.database import SessionLocal
-from app.models.email import Email
+from app.repositories.email_repository import (
+    get_email_by_id,
+    mark_email_processed,
+)
 
 
-def test_update_email():
+def test_mark_email_processed():
     db = SessionLocal()
 
     try:
-        email = db.query(Email).filter(Email.id == 1).first()
+        email = get_email_by_id(
+            db=db,
+            email_id=2,
+        )
 
         if email:
             print(f"Current status: {email.status}")
+            print(f"Current processed_at: {email.processed_at}")
 
-            email.status = "PROCESSING"
+            updated_email = mark_email_processed(
+                db=db,
+                email=email,
+            )
 
-            db.commit()
-            db.refresh(email)
-
-            print("Email updated successfully!")
-            print(f"New status: {email.status}")
+            print("Email marked as processed!")
+            print(f"New status: {updated_email.status}")
+            print(f"Processed at: {updated_email.processed_at}")
 
         else:
             print("Email not found.")
@@ -27,4 +35,4 @@ def test_update_email():
 
 
 if __name__ == "__main__":
-    test_update_email()
+    test_mark_email_processed()
