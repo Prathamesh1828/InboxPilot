@@ -5,3 +5,4 @@ venv = ".venv"
 [tool.pyrefly]
 venvPath = "."
 venv = ".venv"
+python_interpreter = ".venv/Scripts/python.exe"
