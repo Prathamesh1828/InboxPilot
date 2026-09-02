@@ -1,38 +1,39 @@
 from app.db.database import SessionLocal
-from app.repositories.email_repository import (
-    get_email_by_id,
-    mark_email_processed,
-)
+from app.services.email_service import complete_email_processing
 
 
-def test_mark_email_processed():
+def test_complete_email_processing():
     db = SessionLocal()
 
     try:
-        email = get_email_by_id(
+        email = complete_email_processing(
             db=db,
-            email_id=2,
+            email_id=3,
         )
 
         if email:
-            print(f"Current status: {email.status}")
-            print(f"Current processed_at: {email.processed_at}")
-
-            updated_email = mark_email_processed(
-                db=db,
-                email=email,
-            )
-
-            print("Email marked as processed!")
-            print(f"New status: {updated_email.status}")
-            print(f"Processed at: {updated_email.processed_at}")
-
+            print("Email completed successfully!")
+            print(f"Database ID: {email.id}")
+            print(f"Subject: {email.subject}")
+            print(f"Status: {email.status}")
+            print(f"Processed at: {email.processed_at}")
         else:
             print("Email not found.")
+
+        print()
+
+        missing_email = complete_email_processing(
+            db=db,
+            email_id=999,
+        )
+
+        if missing_email is None:
+            print("Missing email test:")
+            print("Email ID 999 was not found safely.")
 
     finally:
         db.close()
 
 
 if __name__ == "__main__":
-    test_mark_email_processed()
+    test_complete_email_processing()
