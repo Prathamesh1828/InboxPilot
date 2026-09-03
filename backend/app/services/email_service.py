@@ -74,3 +74,12 @@ def complete_email_processing(
         db=db,
         email=email,
     )
+
+def get_email(
+    db: Session,
+    email_id: int,
+) -> Email | None:
+    return get_email_by_id(
+        db=db,
+        email_id=email_id,
+    )
