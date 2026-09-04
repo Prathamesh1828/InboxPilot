@@ -2,7 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
-from app.services.email_service import get_email, ingest_email
+from app.services.email_service import (
+    get_email,
+    ingest_email,
+    start_processing_email,
+    complete_email_processing,
+)
 from app.schemas.email import EmailCreate, EmailResponse
 
 router = APIRouter(
@@ -50,5 +55,47 @@ def create_email(
         body=email_data.body,
         received_at=email_data.received_at,
     )
+
+    return email
+
+@router.post(
+    "/{email_id}/process",
+    response_model=EmailResponse,
+)
+def process_email(
+    email_id: int,
+    db: Session = Depends(get_db),
+):
+    email = start_processing_email(
+        db=db,
+        email_id=email_id,
+    )
+
+    if email is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Email not found",
+        )
+
+    return email
+
+@router.post(
+    "/{email_id}/complete",
+    response_model=EmailResponse,
+)
+def complete_email(
+    email_id: int,
+    db: Session = Depends(get_db),
+):
+    email = complete_email_processing(
+        db=db,
+        email_id=email_id,
+    )
+
+    if email is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Email not found",
+        )
 
     return email
