@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 
 from app.models.email import Email
+from app.schemas.classification import EmailClassification
 
 
 def get_email_by_id(
@@ -103,6 +104,10 @@ def update_email_status(
     email: Email,
     status: str,
 ) -> Email:
+    """
+    Update the processing status of an email.
+    """
+
     email.status = status
 
     db.commit()
@@ -115,8 +120,44 @@ def mark_email_processed(
     db: Session,
     email: Email,
 ) -> Email:
+    """
+    Mark an email as completely processed.
+    """
+
     email.status = "COMPLETED"
     email.processed_at = datetime.now(timezone.utc)
+
+    db.commit()
+    db.refresh(email)
+
+    return email
+
+
+def update_email_classification(
+    db: Session,
+    email: Email,
+    classification: EmailClassification,
+    status: str,
+) -> Email:
+    """
+    Store the LLM classification result for an email.
+
+    The classification contains:
+        - category
+        - confidence
+        - reasoning
+
+    The status is determined by the classification safety gate,
+    for example:
+        - CLASSIFIED
+        - REVIEW
+    """
+
+    email.category = classification.category.value
+    email.classification_confidence = classification.confidence
+    email.classification_reasoning = classification.reasoning
+    email.classified_at = datetime.now(timezone.utc)
+    email.status = status
 
     db.commit()
     db.refresh(email)

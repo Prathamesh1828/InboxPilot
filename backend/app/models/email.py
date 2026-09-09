@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Integer, JSON, String, Text, Float
+from sqlalchemy import DateTime, Float, Integer, JSON, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -73,19 +73,24 @@ class Email(Base):
         nullable=False,
     )
 
-    classification_confidence: Mapped[float | None] = mapped_column(
-    Float,
-    nullable=True,
-    )
-
+    # Classification result
     category: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
         index=True,
     )
 
+    classification_confidence: Mapped[float | None] = mapped_column(
+        Float,
+        nullable=True,
+    )
+
+    classification_reasoning: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+    )
+
     classified_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
-    
