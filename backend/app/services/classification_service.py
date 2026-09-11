@@ -1,30 +1,31 @@
 from sqlalchemy.orm import Session
 
 from app.models.email import Email
-from app.repositories.email_repository import update_email_classification
+from app.repositories.email_repository import (
+    get_pending_emails,
+    update_email_classification,
+)
 from app.services.classification_gate import evaluate_classification
 from app.services.classifier import EmailClassifier
 
 
 class ClassificationService:
     """
-    Coordinates the complete email classification workflow.
+    Coordinates the email classification workflow.
 
     Flow:
 
-        Email from database
-                ↓
+        PENDING email
+            ↓
         EmailClassifier
-                ↓
-        Groq
-                ↓
-        Gemini fallback if required
-                ↓
-        Classification Gate
-                ↓
+            ↓
+        Groq → Gemini fallback
+            ↓
+        Confidence Gate
+            ↓
         CLASSIFIED / REVIEW
-                ↓
-        Database
+            ↓
+        PostgreSQL
     """
 
     def __init__(self) -> None:
@@ -39,10 +40,6 @@ class ClassificationService:
         Classify a single email and persist the result.
         """
 
-        # --------------------------------------------------------
-        # 1. Run the LLM classifier
-        # --------------------------------------------------------
-
         classification = self.classifier.classify(
             sender=email.sender,
             recipients=email.recipients,
@@ -50,23 +47,44 @@ class ClassificationService:
             body=email.body,
         )
 
-        # --------------------------------------------------------
-        # 2. Evaluate confidence
-        # --------------------------------------------------------
-
         status = evaluate_classification(
             classification
         )
 
-        # --------------------------------------------------------
-        # 3. Persist classification result
-        # --------------------------------------------------------
-
-        updated_email = update_email_classification(
+        return update_email_classification(
             db=db,
             email=email,
             classification=classification,
             status=status,
         )
 
-        return updated_email
+    def classify_pending_emails(
+        self,
+        db: Session,
+    ) -> list[Email]:
+        """
+        Classify all currently pending emails.
+
+        Only emails with PENDING status are processed.
+        """
+
+        pending_emails = get_pending_emails(db)
+
+        classified_emails: list[Email] = []
+
+        for email in pending_emails:
+            try:
+                result = self.classify_email(
+                    db=db,
+                    email=email,
+                )
+
+                classified_emails.append(result)
+
+            except Exception as exc:
+                print(
+                    f"❌ Failed to classify email "
+                    f"{email.id}: {exc}"
+                )
+
+        return classified_emails

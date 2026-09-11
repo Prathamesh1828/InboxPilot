@@ -163,3 +163,17 @@ def update_email_classification(
     db.refresh(email)
 
     return email
+
+def get_pending_emails(
+    db: Session,
+) -> list[Email]:
+    """
+    Return all emails that are waiting for classification.
+    """
+
+    return (
+        db.query(Email)
+        .filter(Email.status == "PENDING")
+        .order_by(Email.id.asc())
+        .all()
+    )
