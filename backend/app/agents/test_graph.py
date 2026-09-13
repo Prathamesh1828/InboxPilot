@@ -51,6 +51,10 @@ def main() -> None:
         f"{result['grounding_errors']}"
     )
     print(
+    f"Execution result:  "
+    f"{result['execution_result']}"
+)
+    print(
         f"Workflow status:    "
         f"{result['workflow_status']}"
     )

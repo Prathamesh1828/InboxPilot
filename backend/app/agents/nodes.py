@@ -2,6 +2,7 @@ from app.agents.state import InboxPilotState
 from app.services.planner import EmailPlanner
 from app.services.action_safety import evaluate_action_safety
 from app.services.parameter_grounding import validate_action_parameters
+from app.services.executor import ActionExecutor
 
 def safety_node(
     state: InboxPilotState,
@@ -158,15 +159,26 @@ def execute_node(
     state: InboxPilotState,
 ) -> dict:
     """
-    Placeholder for executing a safe action.
+    Execute a safe action through the ActionExecutor.
 
-    No real external action is performed yet.
+    The executor currently operates in dry-run mode.
     """
 
-    return {
-        "workflow_status": "EXECUTION_PENDING",
-    }
+    action_plan = state.action_plan
 
+    if action_plan is None:
+        raise ValueError(
+            "Action plan is required before execution"
+        )
+
+    executor = ActionExecutor()
+
+    result = executor.execute(action_plan)
+
+    return {
+    "workflow_status": "EXECUTED",
+    "execution_result": result,
+}
 
 def approval_node(
     state: InboxPilotState,
