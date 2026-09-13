@@ -1,7 +1,7 @@
 from app.schemas.action_plan import (
-    ActionPlan,
     ActionType,
     RiskLevel,
+    BillActionPlan,
 )
 from app.services.action_safety import evaluate_action_safety
 
@@ -10,7 +10,7 @@ def main() -> None:
     print("Testing InboxPilot action safety policy")
     print("=" * 60)
 
-    test_plan = ActionPlan(
+    test_plan = BillActionPlan(
         action=ActionType.LOG_BILL,
         parameters={
             "amount": 2450,
@@ -46,9 +46,9 @@ def main() -> None:
         safe_plan.risk_level == RiskLevel.LOW
         and safe_plan.requires_approval is False
     ):
-        print("✅ Safety policy test passed")
+        print("PASS: Safety policy test passed")
     else:
-        print("❌ Safety policy test failed")
+        print("FAIL: Safety policy test failed")
 
 
 if __name__ == "__main__":

@@ -4,7 +4,7 @@ from app.agents.nodes import (
     route_after_grounding,
 )
 from app.agents.state import InboxPilotState
-from app.schemas.action_plan import ActionPlan, ActionType, RiskLevel
+from app.schemas.action_plan import ActionType, RiskLevel, BillActionPlan
 
 
 def main() -> None:
@@ -18,7 +18,7 @@ def main() -> None:
             "Your electricity bill is ₹2450. "
             "Payment is due on September 20, 2026."
         ),
-        action_plan=ActionPlan(
+        action_plan=BillActionPlan(
             action=ActionType.LOG_BILL,
             parameters={
                 "amount": 2450,

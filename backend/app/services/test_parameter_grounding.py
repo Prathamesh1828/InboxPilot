@@ -1,4 +1,4 @@
-from app.schemas.action_plan import ActionPlan, ActionType, RiskLevel
+from app.schemas.action_plan import ActionType, RiskLevel, BillActionPlan
 from app.services.parameter_grounding import validate_action_parameters
 
 
@@ -11,7 +11,7 @@ def main() -> None:
         "Payment is due on September 20, 2026."
     )
 
-    plan = ActionPlan(
+    plan = BillActionPlan(
         action=ActionType.LOG_BILL,
         parameters={
             "amount": 2450,
@@ -36,13 +36,13 @@ def main() -> None:
     print("-" * 60)
 
     if errors:
-        print("❌ Grounding failed")
+        print("FAIL: Grounding failed")
 
         for error in errors:
             print(f"- {error}")
 
     else:
-        print("✅ All parameters are grounded")
+        print("PASS: All parameters are grounded")
 
 
 if __name__ == "__main__":
