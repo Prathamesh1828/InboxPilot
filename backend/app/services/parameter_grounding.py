@@ -1,7 +1,11 @@
 import re
 from datetime import date
+from decimal import Decimal, InvalidOperation
 
-from app.schemas.action_plan import ActionPlan
+from app.schemas.action_plan import (
+    ActionPlan,
+    ActionType,
+)
 
 
 def validate_action_parameters(
@@ -10,8 +14,8 @@ def validate_action_parameters(
     body: str,
 ) -> list[str]:
     """
-    Check whether important action parameters
-    are grounded in the original email.
+    Check whether action parameters are present and
+    grounded in the original email.
 
     Returns a list of grounding errors.
     An empty list means the parameters passed validation.
@@ -19,56 +23,183 @@ def validate_action_parameters(
 
     errors: list[str] = []
 
-    parameters = plan.parameters
+    email_text = " ".join(
+        part
+        for part in [subject, body]
+        if part
+    )
 
     # -------------------------------------------------
-    # BILL parameters
+    # LOG_BILL
     # -------------------------------------------------
 
-    if plan.action.value == "LOG_BILL":
+    if plan.action == ActionType.LOG_BILL:
+        parameters = plan.parameters
 
-        amount = parameters.get("amount")
+        if not _amount_is_grounded(
+            amount=parameters.amount,
+            body=body,
+        ):
+            errors.append(
+                f"Bill amount '{parameters.amount}' "
+                "was not found in email body."
+            )
 
-        if amount is not None:
-            amount_text = str(amount)
+        if not parameters.currency:
+            errors.append(
+                "Bill currency is missing from action parameters."
+            )
 
-            if amount_text not in body:
-                errors.append(
-                    f"Bill amount '{amount}' was not found in email body."
-                )
-
-        due_date = parameters.get("due_date")
-
-        if due_date is not None:
+        if parameters.due_date is not None:
             if not _date_is_grounded(
-                due_date=str(due_date),
+                due_date=parameters.due_date,
                 body=body,
             ):
                 errors.append(
-                    f"Due date '{due_date}' was not clearly found "
+                    f"Due date '{parameters.due_date}' was not clearly "
+                    "found in email body."
+                )
+
+        if parameters.vendor is not None:
+            if parameters.vendor.lower() not in body.lower():
+                errors.append(
+                    f"Vendor '{parameters.vendor}' was not found "
                     "in email body."
                 )
 
-        vendor = parameters.get("vendor")
+    # -------------------------------------------------
+    # CREATE_REMINDER
+    # -------------------------------------------------
 
-        if vendor is not None:
-            if str(vendor).lower() not in body.lower():
-                errors.append(
-                    f"Vendor '{vendor}' was not found in email body."
-                )
+    elif plan.action == ActionType.CREATE_REMINDER:
+        parameters = plan.parameters
+
+        if not parameters.reminder_text:
+            errors.append(
+                "Reminder text is missing from action parameters."
+            )
+        elif not _reminder_text_is_grounded(
+            reminder_text=parameters.reminder_text,
+            email_text=email_text,
+        ):
+            errors.append(
+                f"Reminder text '{parameters.reminder_text}' "
+                "was not sufficiently grounded in the email."
+            )
+
+        if parameters.reminder_date is None:
+            errors.append(
+                "Reminder date is missing from action parameters."
+            )
+        elif not _date_is_grounded(
+            due_date=parameters.reminder_date,
+            body=body,
+        ):
+            errors.append(
+                f"Reminder date '{parameters.reminder_date}' "
+                "was not clearly found in email body."
+            )
 
     return errors
+
+
+def _amount_is_grounded(
+    amount: float,
+    body: str,
+) -> bool:
+    """
+    Check whether a numeric bill amount appears in the email.
+
+    Handles equivalent representations such as:
+    2450
+    2450.0
+    ₹2450
+    INR 2450
+
+    It avoids substring false positives such as treating
+    2450 as present inside 24500.
+    """
+
+    try:
+        expected_amount = Decimal(str(amount))
+    except (InvalidOperation, ValueError):
+        return False
+
+    amount_matches = re.findall(
+        r"(?<![\d.])\d+(?:,\d{3})*(?:\.\d+)?"
+        r"(?=$|[^\d.]|[.](?!\d))",
+        body,
+    )
+
+    for match in amount_matches:
+        normalized_match = match.replace(",", "")
+
+        try:
+            email_amount = Decimal(normalized_match)
+        except InvalidOperation:
+            continue
+
+        if email_amount == expected_amount:
+            return True
+
+    return False
+
+
+def _reminder_text_is_grounded(
+    reminder_text: str,
+    email_text: str,
+) -> bool:
+    reminder_words = _meaningful_words(reminder_text)
+    email_words = _meaningful_words(email_text)
+
+    if not reminder_words:
+        return False
+
+    matched_words = reminder_words.intersection(email_words)
+    match_ratio = len(matched_words) / len(reminder_words)
+
+    return match_ratio >= 0.5
+
+
+def _meaningful_words(text: str) -> set[str]:
+    stop_words = {
+        "a",
+        "an",
+        "and",
+        "are",
+        "as",
+        "at",
+        "be",
+        "by",
+        "for",
+        "from",
+        "in",
+        "is",
+        "it",
+        "of",
+        "on",
+        "or",
+        "the",
+        "to",
+        "your",
+    }
+
+    words = re.findall(
+        r"[a-zA-Z0-9]+",
+        text.lower(),
+    )
+
+    return {
+        word
+        for word in words
+        if word not in stop_words
+    }
 
 
 def _date_is_grounded(
     due_date: str,
     body: str,
 ) -> bool:
-    """
-    Check whether an ISO date appears in the email,
-    either directly or in a readable date format.
-    """
-
     if due_date in body:
         return True
 
