@@ -2,6 +2,7 @@ from app.db.base import Base
 from app.db.database import engine
 from app.models.email import Email
 from app.models.google_account import GoogleAccount
+from app.models.bill import Bill
 
 
 def init_db():

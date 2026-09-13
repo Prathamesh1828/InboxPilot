@@ -3,6 +3,7 @@ from app.services.planner import EmailPlanner
 from app.services.action_safety import evaluate_action_safety
 from app.services.parameter_grounding import validate_action_parameters
 from app.services.executor import ActionExecutor
+from sqlalchemy.orm import Session
 
 def safety_node(
     state: InboxPilotState,
@@ -157,11 +158,10 @@ def route_after_safety(
 
 def execute_node(
     state: InboxPilotState,
+    db: Session,
 ) -> dict:
     """
     Execute a safe action through the ActionExecutor.
-
-    The executor currently operates in dry-run mode.
     """
 
     action_plan = state.action_plan
@@ -171,14 +171,23 @@ def execute_node(
             "Action plan is required before execution"
         )
 
+    if state.email_id is None:
+        raise ValueError(
+            "Email ID is required before execution"
+        )
+
     executor = ActionExecutor()
 
-    result = executor.execute(action_plan)
+    result = executor.execute(
+        plan=action_plan,
+        db=db,
+        email_id=state.email_id,
+    )
 
     return {
-    "workflow_status": "EXECUTED",
-    "execution_result": result,
-}
+        "workflow_status": "EXECUTED",
+        "execution_result": result,
+    }
 
 def approval_node(
     state: InboxPilotState,
