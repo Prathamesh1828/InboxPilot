@@ -9,21 +9,22 @@ def main() -> None:
     graph = build_planning_graph()
 
     initial_state = {
-    "email_id": 1000,
-    "subject": "Interview availability",
-    "body": (
-        "Hi, we would like to schedule an interview. "
-        "Please let us know your availability."
-    ),
-    "classification": EmailClassification(
-        category=EmailCategory.MEETING,
-        confidence=0.96,
-        reasoning=(
-            "The email is requesting interview scheduling."
+        "email_id": 999,
+        "subject": "Electricity bill due September 20",
+        "body": (
+            "Your electricity bill of ₹2450 is due on "
+            "September 20, 2026."
         ),
-    ),
-    "workflow_status": "CLASSIFIED",
-}
+        "classification": EmailClassification(
+            category=EmailCategory.BILL,
+            confidence=0.97,
+            reasoning=(
+                "The email contains a payment amount "
+                "and a due date."
+            ),
+        ),
+        "workflow_status": "CLASSIFIED",
+    }
 
     print()
     print("Running graph...")
@@ -45,7 +46,14 @@ def main() -> None:
         f"Requires approval:  "
         f"{action_plan.requires_approval}"
     )
-    print(f"Workflow status:    {result['workflow_status']}")
+    print(
+        f"Grounding errors:   "
+        f"{result['grounding_errors']}"
+    )
+    print(
+        f"Workflow status:    "
+        f"{result['workflow_status']}"
+    )
 
 
 if __name__ == "__main__":

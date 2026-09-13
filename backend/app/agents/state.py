@@ -15,6 +15,8 @@ class InboxPilotState(BaseModel):
 
     action_plan: ActionPlan | None = None
 
+    grounding_errors: list[str] = []
+
     workflow_status: str = "START"
 
     error: str | None = None

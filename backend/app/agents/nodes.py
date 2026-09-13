@@ -1,7 +1,7 @@
 from app.agents.state import InboxPilotState
 from app.services.planner import EmailPlanner
 from app.services.action_safety import evaluate_action_safety
-
+from app.services.parameter_grounding import validate_action_parameters
 
 def safety_node(
     state: InboxPilotState,
@@ -74,6 +74,64 @@ def safety_node(
     return {
         "action_plan": safe_plan,
         "workflow_status": "SAFETY_EVALUATED",
+    }
+
+def grounding_node(
+    state: InboxPilotState,
+) -> dict:
+    """
+    Validate that important action parameters
+    are grounded in the original email.
+    """
+
+    action_plan = state.action_plan
+
+    if action_plan is None:
+        raise ValueError(
+            "Action plan is required before grounding"
+        )
+
+    errors = validate_action_parameters(
+        plan=action_plan,
+        subject=state.subject,
+        body=state.body,
+    )
+
+    if errors:
+        return {
+            "grounding_errors": errors,
+            "workflow_status": "GROUNDING_FAILED",
+        }
+
+    return {
+        "grounding_errors": [],
+        "workflow_status": "GROUNDED",
+    }
+
+def route_after_grounding(
+    state: InboxPilotState,
+) -> str:
+    """
+    Decide whether the workflow can continue
+    to safety evaluation after grounding.
+    """
+
+    if state.grounding_errors:
+        return "review"
+
+    return "safety"
+
+def review_node(
+    state: InboxPilotState,
+) -> dict:
+    """
+    Handle an action plan that failed grounding.
+
+    No external action is performed.
+    """
+
+    return {
+        "workflow_status": "GROUNDING_REVIEW",
     }
 
 def route_after_safety(
