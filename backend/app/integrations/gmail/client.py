@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.core.settings import settings
 from app.models.google_account import GoogleAccount
+from app.integrations.gmail.oauth import GOOGLE_SCOPES
 
 
 def get_google_credentials(
@@ -28,9 +29,7 @@ def get_google_credentials(
         token_uri="https://oauth2.googleapis.com/token",
         client_id=settings.google_client_id,
         client_secret=settings.google_client_secret,
-        scopes=[
-            "https://www.googleapis.com/auth/gmail.readonly",
-        ],
+        scopes=GOOGLE_SCOPES,
     )
 
     # Refresh the access token if necessary.

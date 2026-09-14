@@ -3,11 +3,12 @@ from google_auth_oauthlib.flow import Flow
 from app.core.settings import settings
 
 
-GMAIL_SCOPES = [
+GOOGLE_SCOPES = [
     "openid",
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/userinfo.profile",
     "https://www.googleapis.com/auth/gmail.readonly",
+    "https://www.googleapis.com/auth/calendar.events",
 ]
 
 
@@ -30,7 +31,7 @@ def create_google_flow(**kwargs) -> Flow:
 
     flow = Flow.from_client_config(
         client_config,
-        scopes=GMAIL_SCOPES,
+        scopes=GOOGLE_SCOPES,
         redirect_uri=settings.google_redirect_uri,
         **kwargs
     )

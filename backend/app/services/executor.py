@@ -1,7 +1,9 @@
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 
 from sqlalchemy.orm import Session
 
+from app.integrations.google_calendar.client import create_calendar_event
+from app.models.google_account import GoogleAccount
 from app.repositories.bill_repository import (
     create_bill,
     get_bill_by_email_id,
@@ -14,8 +16,11 @@ from app.schemas.action_plan import (
     ActionPlan,
     ActionType,
     BillActionPlan,
+    CalendarActionPlan,
     ReminderActionPlan,
 )
+from app.services.datetime_parser import parse_calendar_datetime
+
 
 _DATE_FORMATS = (
     "%Y-%m-%d",
@@ -33,6 +38,7 @@ def _parse_date(value: str) -> date:
             return datetime.strptime(value, fmt).date()
         except ValueError:
             continue
+
     raise ValueError(
         f"Unrecognised date format: {value}"
     )
@@ -43,6 +49,7 @@ class ActionExecutor:
     Executes InboxPilot actions.
 
     LOG_BILL and CREATE_REMINDER write to PostgreSQL.
+    CREATE_CALENDAR_EVENT creates a real Google Calendar event.
     Other actions remain in dry-run mode.
     """
 
@@ -65,6 +72,12 @@ class ActionExecutor:
                 plan=plan,
                 db=db,
                 email_id=email_id,
+            )
+
+        if isinstance(plan, CalendarActionPlan):
+            return self._create_calendar_event(
+                plan=plan,
+                db=db,
             )
 
         if plan.action == ActionType.ARCHIVE:
@@ -202,6 +215,82 @@ class ActionExecutor:
             f"Reminder ID: {reminder.id}, "
             f"Text: '{reminder.reminder_text}', "
             f"Date: {reminder.reminder_date}."
+        )
+
+    @staticmethod
+    def _create_calendar_event(
+        plan: CalendarActionPlan,
+        db: Session | None,
+    ) -> str:
+
+        if db is None:
+            raise ValueError(
+                "Database session is required to create a calendar event."
+            )
+
+        parameters = plan.parameters
+
+        if not parameters.start_time:
+            raise ValueError(
+                "Calendar event start time is required."
+            )
+
+        if not parameters.end_time:
+            raise ValueError(
+                "Calendar event end time is required."
+            )
+
+        reference_time = datetime.now(timezone.utc)
+
+        try:
+            start_time = parse_calendar_datetime(
+                value=parameters.start_time,
+                reference_time=reference_time,
+            )
+        except ValueError as exc:
+            raise ValueError(
+                f"Invalid calendar event start time: "
+                f"{parameters.start_time}"
+            ) from exc
+
+        try:
+            end_time = parse_calendar_datetime(
+                value=parameters.end_time,
+                reference_time=reference_time,
+            )
+        except ValueError as exc:
+            raise ValueError(
+                f"Invalid calendar event end time: "
+                f"{parameters.end_time}"
+            ) from exc
+
+        if end_time <= start_time:
+            raise ValueError(
+                "Calendar event end time must be after start time."
+            )
+
+        account = (
+            db.query(GoogleAccount)
+            .first()
+        )
+
+        if account is None:
+            raise ValueError(
+                "No connected Google account found."
+            )
+
+        event_id = create_calendar_event(
+            db=db,
+            account=account,
+            title=parameters.title,
+            start_time=start_time,
+            end_time=end_time,
+            description=parameters.description,
+        )
+
+        return (
+            f"Calendar event created successfully. "
+            f"Google Event ID: {event_id}."
         )
 
     @staticmethod

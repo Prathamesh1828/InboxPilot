@@ -121,6 +121,9 @@ def gmail_callback(
 
     if not email:
         return {"error": "Failed to retrieve email address from Google"}
+        
+    if not credentials or not credentials.token:
+        return {"error": "Failed to retrieve access token from Google"}
 
     # Save credentials securely in the database
     create_or_update_google_account(
