@@ -1,31 +1,14 @@
-from app.agents.state import InboxPilotState
-from app.services.planner import EmailPlanner
-from app.services.action_safety import evaluate_action_safety
-from app.services.parameter_grounding import validate_action_parameters
-from app.services.executor import ActionExecutor
 from sqlalchemy.orm import Session
 
-def safety_node(
-    state: InboxPilotState,
-) -> dict:
-    """
-    Apply the deterministic safety policy
-    to the proposed action plan.
-    """
-
-    action_plan = state.action_plan
-
-    if action_plan is None:
-        raise ValueError(
-            "Action plan is required before safety evaluation"
-        )
-
-    safe_plan = evaluate_action_safety(action_plan)
-
-    return {
-        "action_plan": safe_plan,
-        "workflow_status": "SAFETY_EVALUATED",
-    }
+from app.agents.state import InboxPilotState
+from app.repositories.action_approval_repository import (
+    create_action_approval,
+    get_pending_approval_by_email_id,
+)
+from app.services.action_safety import evaluate_action_safety
+from app.services.executor import ActionExecutor
+from app.services.parameter_grounding import validate_action_parameters
+from app.services.planner import EmailPlanner
 
 
 def planning_node(
@@ -56,27 +39,6 @@ def planning_node(
         "workflow_status": "PLANNED",
     }
 
-def safety_node(
-    state: InboxPilotState,
-) -> dict:
-    """
-    Apply the deterministic safety policy
-    to the proposed action plan.
-    """
-
-    action_plan = state.action_plan
-
-    if action_plan is None:
-        raise ValueError(
-            "Action plan is required before safety evaluation"
-        )
-
-    safe_plan = evaluate_action_safety(action_plan)
-
-    return {
-        "action_plan": safe_plan,
-        "workflow_status": "SAFETY_EVALUATED",
-    }
 
 def grounding_node(
     state: InboxPilotState,
@@ -110,6 +72,7 @@ def grounding_node(
         "workflow_status": "GROUNDED",
     }
 
+
 def route_after_grounding(
     state: InboxPilotState,
 ) -> str:
@@ -123,18 +86,29 @@ def route_after_grounding(
 
     return "safety"
 
-def review_node(
+
+def safety_node(
     state: InboxPilotState,
 ) -> dict:
     """
-    Handle an action plan that failed grounding.
-
-    No external action is performed.
+    Apply the deterministic safety policy
+    to the proposed action plan.
     """
 
+    action_plan = state.action_plan
+
+    if action_plan is None:
+        raise ValueError(
+            "Action plan is required before safety evaluation"
+        )
+
+    safe_plan = evaluate_action_safety(action_plan)
+
     return {
-        "workflow_status": "GROUNDING_REVIEW",
+        "action_plan": safe_plan,
+        "workflow_status": "SAFETY_EVALUATED",
     }
+
 
 def route_after_safety(
     state: InboxPilotState,
@@ -155,6 +129,7 @@ def route_after_safety(
         return "approval"
 
     return "execute"
+
 
 def execute_node(
     state: InboxPilotState,
@@ -189,15 +164,61 @@ def execute_node(
         "execution_result": result,
     }
 
+
 def approval_node(
+    state: InboxPilotState,
+    db: Session,
+) -> dict:
+    """
+    Create a persistent approval request for
+    actions that require human approval.
+    """
+
+    action_plan = state.action_plan
+
+    if action_plan is None:
+        raise ValueError(
+            "Action plan is required before requesting approval"
+        )
+
+    if state.email_id is None:
+        raise ValueError(
+            "Email ID is required before requesting approval"
+        )
+
+    existing_approval = get_pending_approval_by_email_id(
+        db=db,
+        email_id=state.email_id,
+    )
+
+    if existing_approval is not None:
+        return {
+            "approval_id": existing_approval.id,
+            "workflow_status": "APPROVAL_PENDING",
+        }
+
+    approval = create_action_approval(
+        db=db,
+        email_id=state.email_id,
+        action=action_plan.action.value,
+        action_plan=action_plan.model_dump(mode="json"),
+    )
+
+    return {
+        "approval_id": approval.id,
+        "workflow_status": "APPROVAL_PENDING",
+    }
+
+
+def review_node(
     state: InboxPilotState,
 ) -> dict:
     """
-    Placeholder for requesting human approval.
+    Handle an action plan that failed grounding.
 
-    No real notification is sent yet.
+    No external action is performed.
     """
 
     return {
-        "workflow_status": "APPROVAL_PENDING",
+        "workflow_status": "GROUNDING_REVIEW",
     }

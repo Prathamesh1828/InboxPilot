@@ -15,6 +15,8 @@ class InboxPilotState(BaseModel):
 
     action_plan: ActionPlan | None = None
 
+    approval_id: int | None = None
+
     grounding_errors: list[str] = Field(
         default_factory=list
     )

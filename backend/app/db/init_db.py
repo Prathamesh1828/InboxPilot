@@ -3,6 +3,7 @@ from app.db.database import engine
 from app.models.email import Email
 from app.models.google_account import GoogleAccount
 from app.models.bill import Bill
+from app.models.action_approval import ActionApproval
 
 
 def init_db():

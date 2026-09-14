@@ -38,7 +38,13 @@ def build_planning_graph(db: Session):
         ),
     )
 
-    graph.add_node("approval", approval_node)
+    graph.add_node(
+    "approval",
+    lambda state: approval_node(
+        state=state,
+        db=db,
+    ),
+)
     graph.add_node("review", review_node)
 
     graph.add_edge(START, "plan")
