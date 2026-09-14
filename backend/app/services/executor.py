@@ -2,12 +2,14 @@ from datetime import date, datetime, timezone
 
 from sqlalchemy.orm import Session
 
+from app.integrations.gmail.client import archive_email
 from app.integrations.google_calendar.client import create_calendar_event
 from app.models.google_account import GoogleAccount
 from app.repositories.bill_repository import (
     create_bill,
     get_bill_by_email_id,
 )
+from app.repositories.email_repository import get_email_by_id
 from app.repositories.reminder_repository import (
     create_reminder,
     get_reminder_by_email_id,
@@ -50,6 +52,7 @@ class ActionExecutor:
 
     LOG_BILL and CREATE_REMINDER write to PostgreSQL.
     CREATE_CALENDAR_EVENT creates a real Google Calendar event.
+    ARCHIVE modifies the Gmail message.
     Other actions remain in dry-run mode.
     """
 
@@ -81,7 +84,10 @@ class ActionExecutor:
             )
 
         if plan.action == ActionType.ARCHIVE:
-            return self._archive()
+            return self._archive(
+                db=db,
+                email_id=email_id,
+            )
 
         if plan.action == ActionType.NO_ACTION:
             return "No action required."
@@ -294,5 +300,48 @@ class ActionExecutor:
         )
 
     @staticmethod
-    def _archive() -> str:
-        return "DRY RUN: Would archive the email."
+    def _archive(
+        db: Session | None,
+        email_id: int | None,
+    ) -> str:
+
+        if db is None:
+            raise ValueError(
+                "Database session is required to archive an email."
+            )
+
+        if email_id is None:
+            raise ValueError(
+                "Email ID is required to archive an email."
+            )
+
+        email = get_email_by_id(
+            db=db,
+            email_id=email_id,
+        )
+
+        if email is None:
+            raise ValueError(
+                f"Email {email_id} not found."
+            )
+
+        account = (
+            db.query(GoogleAccount)
+            .first()
+        )
+
+        if account is None:
+            raise ValueError(
+                "No connected Google account found."
+            )
+
+        archive_email(
+            db=db,
+            account=account,
+            message_id=email.provider_message_id,
+        )
+
+        return (
+            f"Email archived successfully. "
+            f"Message ID: {email.provider_message_id}."
+        )

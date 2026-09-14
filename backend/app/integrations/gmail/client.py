@@ -1,3 +1,5 @@
+from typing import Any
+
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -32,25 +34,19 @@ def get_google_credentials(
         scopes=GOOGLE_SCOPES,
     )
 
-    # Refresh the access token if necessary.
     if credentials.expired and credentials.refresh_token:
         credentials.refresh(Request())
 
-        # Make sure Google returned a new access token.
         if not credentials.token:
             raise RuntimeError(
                 "Google token refresh succeeded but no access token was returned"
             )
 
-        # Save the refreshed access token.
         account.access_token = credentials.token
 
-        # Save the new expiry time if Google provided one.
         if credentials.expiry is not None:
             account.token_expiry = credentials.expiry
 
-        # The GoogleAccount model already handles updated_at
-        # through SQLAlchemy's onupdate configuration.
         db.commit()
         db.refresh(account)
 
@@ -60,7 +56,7 @@ def get_google_credentials(
 def get_gmail_service(
     db: Session,
     account: GoogleAccount,
-):
+) -> Any:
     """
     Build and return an authenticated Gmail API service.
     """
@@ -75,3 +71,30 @@ def get_gmail_service(
         "v1",
         credentials=credentials,
     )
+
+
+def archive_email(
+    db: Session,
+    account: GoogleAccount,
+    message_id: str,
+) -> str:
+    """
+    Archive a Gmail message by removing its INBOX label.
+
+    Returns the Gmail message ID.
+    """
+
+    service = get_gmail_service(
+        db=db,
+        account=account,
+    )
+
+    service.users().messages().modify(
+        userId="me",
+        id=message_id,
+        body={
+            "removeLabelIds": ["INBOX"],
+        },
+    ).execute()
+
+    return message_id
