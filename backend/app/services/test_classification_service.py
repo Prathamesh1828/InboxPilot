@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+import uuid
 
 from app.db.database import SessionLocal
 from app.models.email import Email
@@ -17,7 +18,7 @@ def main() -> None:
         # --------------------------------------------------------
 
         test_email = Email(
-            provider_message_id="classification-service-test-001",
+            provider_message_id=f"classification-service-test-{uuid.uuid4()}",
             thread_id="test-thread-001",
             sender="netflix@example.com",
             recipients=["user@example.com"],
