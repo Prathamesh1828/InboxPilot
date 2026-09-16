@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ActionType(str, Enum):
@@ -20,41 +20,69 @@ class RiskLevel(str, Enum):
 
 
 class BillParameters(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     amount: float = Field(gt=0)
     currency: str = Field(min_length=1, max_length=10)
-    vendor: str | None = Field(default=None, max_length=255)
+    vendor: str | None = Field(
+        default=None,
+        max_length=255,
+    )
     due_date: str | None = None
 
 
 class ReminderParameters(BaseModel):
-    reminder_text: str = Field(min_length=1, max_length=500)
+    model_config = ConfigDict(extra="forbid")
+
+    reminder_text: str = Field(
+        min_length=1,
+        max_length=500,
+    )
     reminder_date: str | None = None
 
 
 class CalendarEventParameters(BaseModel):
-    title: str = Field(min_length=1, max_length=255)
+    model_config = ConfigDict(extra="forbid")
+
+    title: str = Field(
+        min_length=1,
+        max_length=255,
+    )
     start_time: str | None = None
     end_time: str | None = None
     description: str | None = None
 
 
 class DraftReplyParameters(BaseModel):
-    reply_text: str = Field(min_length=1, max_length=5000)
+    model_config = ConfigDict(extra="forbid")
+
+    reply_text: str = Field(
+        min_length=1,
+        max_length=5000,
+    )
 
 
 class ArchiveParameters(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     reason: str | None = None
 
 
 class NoActionParameters(BaseModel):
-    pass
+    model_config = ConfigDict(extra="forbid")
 
 
 class BillActionPlan(BaseModel):
     action: Literal[ActionType.LOG_BILL]
     parameters: BillParameters
-    reasoning: str = Field(min_length=1, max_length=1000)
-    confidence: float = Field(ge=0.0, le=1.0)
+    reasoning: str = Field(
+        min_length=1,
+        max_length=1000,
+    )
+    confidence: float = Field(
+        ge=0.0,
+        le=1.0,
+    )
     risk_level: RiskLevel
     requires_approval: bool
 
@@ -62,8 +90,14 @@ class BillActionPlan(BaseModel):
 class ReminderActionPlan(BaseModel):
     action: Literal[ActionType.CREATE_REMINDER]
     parameters: ReminderParameters
-    reasoning: str = Field(min_length=1, max_length=1000)
-    confidence: float = Field(ge=0.0, le=1.0)
+    reasoning: str = Field(
+        min_length=1,
+        max_length=1000,
+    )
+    confidence: float = Field(
+        ge=0.0,
+        le=1.0,
+    )
     risk_level: RiskLevel
     requires_approval: bool
 
@@ -71,8 +105,14 @@ class ReminderActionPlan(BaseModel):
 class CalendarActionPlan(BaseModel):
     action: Literal[ActionType.CREATE_CALENDAR_EVENT]
     parameters: CalendarEventParameters
-    reasoning: str = Field(min_length=1, max_length=1000)
-    confidence: float = Field(ge=0.0, le=1.0)
+    reasoning: str = Field(
+        min_length=1,
+        max_length=1000,
+    )
+    confidence: float = Field(
+        ge=0.0,
+        le=1.0,
+    )
     risk_level: RiskLevel
     requires_approval: bool
 
@@ -80,8 +120,14 @@ class CalendarActionPlan(BaseModel):
 class DraftReplyActionPlan(BaseModel):
     action: Literal[ActionType.DRAFT_REPLY]
     parameters: DraftReplyParameters
-    reasoning: str = Field(min_length=1, max_length=1000)
-    confidence: float = Field(ge=0.0, le=1.0)
+    reasoning: str = Field(
+        min_length=1,
+        max_length=1000,
+    )
+    confidence: float = Field(
+        ge=0.0,
+        le=1.0,
+    )
     risk_level: RiskLevel
     requires_approval: bool
 
@@ -89,8 +135,14 @@ class DraftReplyActionPlan(BaseModel):
 class ArchiveActionPlan(BaseModel):
     action: Literal[ActionType.ARCHIVE]
     parameters: ArchiveParameters
-    reasoning: str = Field(min_length=1, max_length=1000)
-    confidence: float = Field(ge=0.0, le=1.0)
+    reasoning: str = Field(
+        min_length=1,
+        max_length=1000,
+    )
+    confidence: float = Field(
+        ge=0.0,
+        le=1.0,
+    )
     risk_level: RiskLevel
     requires_approval: bool
 
@@ -100,8 +152,14 @@ class NoActionPlan(BaseModel):
     parameters: NoActionParameters = Field(
         default_factory=NoActionParameters
     )
-    reasoning: str = Field(min_length=1, max_length=1000)
-    confidence: float = Field(ge=0.0, le=1.0)
+    reasoning: str = Field(
+        min_length=1,
+        max_length=1000,
+    )
+    confidence: float = Field(
+        ge=0.0,
+        le=1.0,
+    )
     risk_level: RiskLevel
     requires_approval: bool
 
