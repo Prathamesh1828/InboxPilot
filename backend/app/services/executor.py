@@ -2,7 +2,10 @@ from datetime import date, datetime, timezone
 
 from sqlalchemy.orm import Session
 
-from app.integrations.gmail.client import archive_email
+from app.integrations.gmail.client import (
+    archive_email,
+    create_gmail_draft,
+)
 from app.integrations.google_calendar.client import create_calendar_event
 from app.models.google_account import GoogleAccount
 from app.repositories.bill_repository import (
@@ -19,6 +22,7 @@ from app.schemas.action_plan import (
     ActionType,
     BillActionPlan,
     CalendarActionPlan,
+    DraftReplyActionPlan,
     ReminderActionPlan,
 )
 from app.services.datetime_parser import parse_calendar_datetime
@@ -52,6 +56,7 @@ class ActionExecutor:
 
     LOG_BILL and CREATE_REMINDER write to PostgreSQL.
     CREATE_CALENDAR_EVENT creates a real Google Calendar event.
+    DRAFT_REPLY creates a Gmail draft.
     ARCHIVE modifies the Gmail message.
     Other actions remain in dry-run mode.
     """
@@ -81,6 +86,13 @@ class ActionExecutor:
             return self._create_calendar_event(
                 plan=plan,
                 db=db,
+            )
+
+        if isinstance(plan, DraftReplyActionPlan):
+            return self._draft_reply(
+                plan=plan,
+                db=db,
+                email_id=email_id,
             )
 
         if plan.action == ActionType.ARCHIVE:
@@ -297,6 +309,67 @@ class ActionExecutor:
         return (
             f"Calendar event created successfully. "
             f"Google Event ID: {event_id}."
+        )
+
+    @staticmethod
+    def _draft_reply(
+        plan: DraftReplyActionPlan,
+        db: Session | None,
+        email_id: int | None,
+    ) -> str:
+
+        if db is None:
+            raise ValueError(
+                "Database session is required to draft a reply."
+            )
+
+        if email_id is None:
+            raise ValueError(
+                "Email ID is required to draft a reply."
+            )
+
+        email = get_email_by_id(
+            db=db,
+            email_id=email_id,
+        )
+
+        if email is None:
+            raise ValueError(
+                f"Email {email_id} not found."
+            )
+
+        account = (
+            db.query(GoogleAccount)
+            .first()
+        )
+
+        if account is None:
+            raise ValueError(
+                "No connected Google account found."
+            )
+
+        if not email.sender:
+            raise ValueError(
+                "Original email sender is required to create a reply."
+            )
+
+        subject = email.subject or ""
+
+        if not subject.lower().startswith("re:"):
+            subject = f"Re: {subject}"
+
+        draft_id = create_gmail_draft(
+            db=db,
+            account=account,
+            to=email.sender,
+            subject=subject,
+            body=plan.parameters.reply_text,
+            thread_id=email.thread_id,
+        )
+
+        return (
+            f"Gmail draft created successfully. "
+            f"Draft ID: {draft_id}."
         )
 
     @staticmethod

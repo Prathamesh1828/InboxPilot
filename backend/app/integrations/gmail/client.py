@@ -1,3 +1,5 @@
+import base64
+from email.mime.text import MIMEText
 from typing import Any
 
 from google.auth.transport.requests import Request
@@ -98,3 +100,53 @@ def archive_email(
     ).execute()
 
     return message_id
+
+
+def create_gmail_draft(
+    db: Session,
+    account: GoogleAccount,
+    to: str,
+    subject: str,
+    body: str,
+    thread_id: str | None = None,
+) -> str:
+    """
+    Create a Gmail draft.
+
+    Returns the Gmail draft ID.
+    """
+
+    service = get_gmail_service(
+        db=db,
+        account=account,
+    )
+
+    message = MIMEText(body)
+
+    message["to"] = to
+    message["subject"] = subject
+
+    encoded_message = base64.urlsafe_b64encode(
+        message.as_bytes()
+    ).decode()
+
+    draft_body = {
+        "message": {
+            "raw": encoded_message,
+        }
+    }
+
+    if thread_id:
+        draft_body["message"]["threadId"] = thread_id
+
+    draft = (
+        service.users()
+        .drafts()
+        .create(
+            userId="me",
+            body=draft_body,
+        )
+        .execute()
+    )
+
+    return draft["id"]
