@@ -40,9 +40,7 @@ class RawActionPlan(BaseModel):
 
     parameters: dict[str, Any] = Field(
         default_factory=dict,
-        description=(
-            "Parameters required for the selected action."
-        ),
+        description="Parameters for the selected action only.",
     )
 
     reasoning: str = Field(
@@ -73,7 +71,7 @@ class EmailPlanner:
         body: str,
     ) -> ActionPlan:
         """
-        Ask the LLM to propose an action plan.
+        Ask the LLM to propose one action for the email.
 
         The LLM decides:
         - action
@@ -91,95 +89,56 @@ class EmailPlanner:
         )
 
         prompt = f"""
-You are the planning component of InboxPilot.
+You are InboxPilot's action planner.
 
-Your job is to determine what action, if any, should be
-taken for an email.
+Choose exactly ONE action for this classified email.
 
-The email has already been classified.
+Category: {category}
 
-CLASSIFICATION:
-{category}
+Subject: {subject or "(No subject)"}
 
-CLASSIFICATION REASONING:
-{classification_reasoning}
-
-SUBJECT:
-{subject or "(No subject)"}
-
-BODY:
+Email:
 {body}
 
-Choose exactly one action.
-
 Allowed actions:
+LOG_BILL
+CREATE_CALENDAR_EVENT
+CREATE_REMINDER
+DRAFT_REPLY
+ARCHIVE
+NO_ACTION
 
-- LOG_BILL
-- CREATE_CALENDAR_EVENT
-- CREATE_REMINDER
-- DRAFT_REPLY
-- ARCHIVE
-- NO_ACTION
+Parameter rules:
 
-IMPORTANT PARAMETER RULES:
+LOG_BILL:
+amount, currency, vendor, due_date
 
-For LOG_BILL, use ONLY:
-- amount
-- currency
-- vendor
-- due_date
+CREATE_CALENDAR_EVENT:
+title, start_time, end_time, description
 
-For CREATE_REMINDER, use ONLY:
-- reminder_text
-- reminder_date
+CREATE_REMINDER:
+reminder_text, reminder_date
 
-For CREATE_CALENDAR_EVENT, use ONLY:
-- title
-- start_time
-- end_time
-- description
+DRAFT_REPLY:
+reply_text
 
-For DRAFT_REPLY, use ONLY:
-- reply_text
+ARCHIVE:
+reason
 
-For ARCHIVE, use ONLY:
-- reason
+NO_ACTION:
+{{}}
 
-For NO_ACTION:
-- use an empty parameters object
+Rules:
+- Use only parameters allowed for the selected action.
+- Do not mix parameters between actions.
+- Ground every parameter in the email.
+- Do not invent facts.
+- If the email does not contain enough information for an action, choose NO_ACTION.
+- Return short reasoning.
+- Confidence must be between 0.0 and 1.0.
+- Do not determine risk or approval.
 
-IMPORTANT:
-
-Do not mix parameters between action types.
-
-For CREATE_REMINDER, NEVER use:
-- amount
-- currency
-- vendor
-- due_date
-- title
-- note
-- description
-
-Instead use:
-- reminder_text
-- reminder_date
-
-For LOG_BILL, NEVER use reminder_text or reminder_date.
-
-All parameters must be grounded in the original email.
-
-Do not invent facts.
-
-Provide a short reasoning.
-
-Provide confidence between 0.0 and 1.0.
-
-Risk level and approval are NOT your responsibility.
-They will be determined by InboxPilot's deterministic
-safety policy after grounding.
-
-Return ONLY valid JSON.
+Return valid JSON only.
 """
 
         raw_plan = cast(

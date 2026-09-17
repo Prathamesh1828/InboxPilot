@@ -4,6 +4,7 @@ from app.integrations.gmail.fetcher import fetch_inbox_messages
 from app.integrations.gmail.parser import parse_gmail_message
 from app.models.google_account import GoogleAccount
 from app.repositories.email_repository import create_email_if_not_exists
+from app.workers.tasks import process_email_pipeline
 
 
 def ingest_inbox_emails(
@@ -12,11 +13,11 @@ def ingest_inbox_emails(
     max_results: int = 10,
 ) -> dict[str, int]:
     """
-    Fetch Inbox messages from Gmail, parse them, and store
-    them in the database.
+    Fetch Inbox messages from Gmail, parse them, store new messages
+    in the database, and queue newly inserted emails for background
+    processing.
 
-    Existing messages are skipped using the Gmail
-    provider message ID.
+    Existing messages are skipped using the Gmail provider message ID.
     """
 
     messages = fetch_inbox_messages(
@@ -33,7 +34,7 @@ def ingest_inbox_emails(
         try:
             parsed_email = parse_gmail_message(message)
 
-            _, created = create_email_if_not_exists(
+            email, created = create_email_if_not_exists(
                 db=db,
                 provider_message_id=parsed_email[
                     "provider_message_id"
@@ -48,8 +49,27 @@ def ingest_inbox_emails(
 
             if created:
                 inserted += 1
+
+                print(
+                    f"[Ingestion] New email created: "
+                    f"{email.id}"
+                )
+
+                # Send the newly created email to Celery.
+                task = process_email_pipeline.delay(email.id)
+
+                print(
+                    f"[Ingestion] Celery task queued: "
+                    f"{task.id}"
+                )
+
             else:
                 skipped += 1
+
+                print(
+                    f"[Ingestion] Email already exists: "
+                    f"{email.id}"
+                )
 
         except Exception as e:
             failed += 1

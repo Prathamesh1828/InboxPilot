@@ -25,7 +25,7 @@ def main():
         result = ingest_inbox_emails(
             db=db,
             account=account,
-            max_results=10,
+            max_results=1,
         )
 
         print("\n========== INGESTION RESULT ==========")

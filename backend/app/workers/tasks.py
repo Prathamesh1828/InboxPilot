@@ -1,6 +1,7 @@
 from celery import Task
 
 from app.db.database import SessionLocal
+from app.services.email_pipeline import EmailPipeline
 from app.services.workflow_service import WorkflowService
 from app.workers.celery_app import celery_app
 
@@ -14,7 +15,14 @@ class DatabaseTask(Task):
     base=DatabaseTask,
     name="app.workers.tasks.process_email",
 )
-def process_email(self: DatabaseTask, email_id: int) -> dict:
+def process_email(
+    self: DatabaseTask,
+    email_id: int,
+) -> dict:
+    """
+    Run an already-classified email through the action workflow.
+    """
+
     db = SessionLocal()
 
     try:
@@ -34,6 +42,102 @@ def process_email(self: DatabaseTask, email_id: int) -> dict:
         }
 
     except Exception as exc:
+        print(
+            f"[Celery] process_email failed for "
+            f"email {email_id}: {exc}"
+        )
+
+        raise self.retry(
+            exc=exc,
+            countdown=10,
+            max_retries=3,
+        )
+
+    finally:
+        db.close()
+
+
+@celery_app.task(
+    bind=True,
+    base=DatabaseTask,
+    name="app.workers.tasks.process_email_pipeline",
+)
+def process_email_pipeline(
+    self: DatabaseTask,
+    email_id: int,
+) -> dict:
+    """
+    Run the complete InboxPilot pipeline:
+
+        PENDING
+          ↓
+        Classification
+          ↓
+        Confidence Gate
+          ↓
+        REVIEW or CLASSIFIED
+          ↓
+        LangGraph workflow
+    """
+
+    db = SessionLocal()
+
+    try:
+        print(
+            f"[Celery] Starting email pipeline "
+            f"for email {email_id}"
+        )
+
+        pipeline = EmailPipeline()
+
+        result = pipeline.process_email(
+            db=db,
+            email_id=email_id,
+        )
+
+        print(
+            f"[Celery] Email {email_id} pipeline completed."
+        )
+
+        return {
+            "email_id": result.email_id,
+            "workflow_status": result.workflow_status,
+            "category": (
+                result.classification.category.value
+                if result.classification is not None
+                else None
+            ),
+            "confidence": (
+                result.classification.confidence
+                if result.classification is not None
+                else None
+            ),
+            "action": (
+                result.action_plan.action.value
+                if result.action_plan is not None
+                else None
+            ),
+            "risk_level": (
+                result.action_plan.risk_level.value
+                if result.action_plan is not None
+                else None
+            ),
+            "requires_approval": (
+                result.action_plan.requires_approval
+                if result.action_plan is not None
+                else False
+            ),
+            "approval_id": result.approval_id,
+            "execution_result": result.execution_result,
+            "error": result.error,
+        }
+
+    except Exception as exc:
+        print(
+            f"[Celery] process_email_pipeline failed "
+            f"for email {email_id}: {exc}"
+        )
+
         raise self.retry(
             exc=exc,
             countdown=10,
