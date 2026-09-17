@@ -1,4 +1,4 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy.orm import Session
 
@@ -253,11 +253,6 @@ class ActionExecutor:
                 "Calendar event start time is required."
             )
 
-        if not parameters.end_time:
-            raise ValueError(
-                "Calendar event end time is required."
-            )
-
         reference_time = datetime.now(timezone.utc)
 
         try:
@@ -271,16 +266,19 @@ class ActionExecutor:
                 f"{parameters.start_time}"
             ) from exc
 
-        try:
-            end_time = parse_calendar_datetime(
-                value=parameters.end_time,
-                reference_time=reference_time,
-            )
-        except ValueError as exc:
-            raise ValueError(
-                f"Invalid calendar event end time: "
-                f"{parameters.end_time}"
-            ) from exc
+        if parameters.end_time:
+            try:
+                end_time = parse_calendar_datetime(
+                    value=parameters.end_time,
+                    reference_time=reference_time,
+                )
+            except ValueError as exc:
+                raise ValueError(
+                    f"Invalid calendar event end time: "
+                    f"{parameters.end_time}"
+                ) from exc
+        else:
+            end_time = start_time + timedelta(hours=1)
 
         if end_time <= start_time:
             raise ValueError(

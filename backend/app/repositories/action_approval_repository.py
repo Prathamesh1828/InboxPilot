@@ -49,6 +49,26 @@ def get_pending_approval_by_email_id(
         .first()
     )
 
+def get_pending_approvals(
+    db: Session,
+) -> list[ActionApproval]:
+    """
+    Return all pending approval requests.
+
+    Newest approval requests are returned first.
+    """
+
+    return (
+        db.query(ActionApproval)
+        .filter(
+            ActionApproval.status == "PENDING"
+        )
+        .order_by(
+            ActionApproval.created_at.desc()
+        )
+        .all()
+    )
+
 
 def update_action_approval_status(
     db: Session,
@@ -68,5 +88,7 @@ def update_action_approval_status(
 
     db.commit()
     db.refresh(approval)
+
+
 
     return approval

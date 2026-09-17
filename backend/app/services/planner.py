@@ -116,6 +116,14 @@ amount, currency, vendor, due_date
 CREATE_CALENDAR_EVENT:
 title, start_time, end_time, description
 
+For CREATE_CALENDAR_EVENT:
+- start_time is required when the email provides a meeting time.
+- end_time is optional.
+- If the email does not provide an end time, use null.
+- Do NOT invent an end time.
+- Missing end_time alone is NOT a reason to choose NO_ACTION.
+
+
 CREATE_REMINDER:
 reminder_text, reminder_date
 

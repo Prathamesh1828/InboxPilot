@@ -177,3 +177,16 @@ def get_pending_emails(
         .order_by(Email.id.asc())
         .all()
     )
+
+def get_emails(
+    db: Session,
+) -> list[Email]:
+    """
+    Return all emails ordered from newest to oldest.
+    """
+
+    return (
+        db.query(Email)
+        .order_by(Email.created_at.desc())
+        .all()
+    )

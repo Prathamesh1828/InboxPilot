@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 from app.schemas.action_plan import ActionPlan
@@ -8,8 +10,12 @@ class InboxPilotState(BaseModel):
     email_id: int | None = None
 
     subject: str | None = None
-
     body: str = ""
+
+    # Original email timestamp.
+    # Used when grounding relative dates such as
+    # "today" and "tomorrow".
+    received_at: datetime | None = None
 
     classification: EmailClassification | None = None
 

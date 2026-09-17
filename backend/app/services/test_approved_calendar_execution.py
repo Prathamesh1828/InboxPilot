@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from app.db.database import SessionLocal
 from app.integrations.google_calendar.client import get_calendar_service
 from app.models.google_account import GoogleAccount
+from app.models.email import Email
 from app.repositories.action_approval_repository import (
     create_action_approval,
 )
@@ -11,7 +12,6 @@ from app.services.approval_execution_service import (
 )
 from app.services.approval_service import ApprovalService
 
-
 def main() -> None:
     print("Testing Approved Calendar Execution")
     print("=" * 60)
@@ -19,6 +19,7 @@ def main() -> None:
     db = SessionLocal()
 
     event_id = None
+    email_id = None
 
     try:
         account = db.query(GoogleAccount).first()
@@ -35,6 +36,21 @@ def main() -> None:
 
         end_time = start_time + timedelta(hours=1)
 
+        # Create a dummy email so grounding validation passes
+        dummy_email = Email(
+            provider_message_id="test_msg_id_approved_cal",
+            thread_id="test_thread_id_approved_cal",
+            subject="Test Calendar Approval",
+            sender="test@example.com",
+            recipients=["test@example.com"],
+            body=f"Let's schedule a meeting from {start_time.isoformat()} to {end_time.isoformat()} for Temporary approved action test.",
+            received_at=datetime.now(timezone.utc)
+        )
+        db.add(dummy_email)
+        db.commit()
+        db.refresh(dummy_email)
+        email_id = dummy_email.id
+
         action_plan = {
             "action": "CREATE_CALENDAR_EVENT",
             "parameters": {
@@ -48,10 +64,6 @@ def main() -> None:
             "risk_level": "MEDIUM",
             "requires_approval": True,
         }
-
-        # Use an existing email only for the approval record.
-        # ApprovalExecutionService will retrieve it.
-        email_id = 2
 
         approval = create_action_approval(
             db=db,
@@ -110,6 +122,16 @@ def main() -> None:
         print("Temporary Calendar event deleted.")
 
     finally:
+        if email_id:
+            from app.models.action_approval import ActionApproval
+            approvals = db.query(ActionApproval).filter(ActionApproval.email_id == email_id).all()
+            for app in approvals:
+                db.delete(app)
+            db.commit()
+            email = db.query(Email).get(email_id)
+            if email:
+                db.delete(email)
+                db.commit()
         db.close()
 
 

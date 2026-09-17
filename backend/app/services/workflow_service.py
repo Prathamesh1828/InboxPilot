@@ -40,6 +40,7 @@ class WorkflowService:
             email_id=email.id,
             subject=email.subject,
             body=email.body,
+            received_at=email.received_at,
         )
 
         # Reconstruct the classification object from the database.

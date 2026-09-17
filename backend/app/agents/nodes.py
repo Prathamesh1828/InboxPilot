@@ -59,6 +59,7 @@ def grounding_node(
         plan=action_plan,
         subject=state.subject,
         body=state.body,
+        reference_time=state.received_at,
     )
 
     if errors:

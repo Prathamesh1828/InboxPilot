@@ -1,5 +1,5 @@
 import re
-from datetime import date
+from datetime import date, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 
 from app.schemas.action_plan import (
@@ -12,10 +12,16 @@ def validate_action_parameters(
     plan: ActionPlan,
     subject: str | None,
     body: str,
+    reference_time: datetime | None = None,
 ) -> list[str]:
     """
     Check whether action parameters are present and
     grounded in the original email.
+
+    reference_time is normally the email's received_at
+    timestamp. It allows relative expressions such as
+    "today" and "tomorrow" to be compared against
+    normalized planner output.
 
     Returns a list of grounding errors.
     An empty list means the parameters passed validation.
@@ -107,7 +113,6 @@ def validate_action_parameters(
     elif plan.action == ActionType.CREATE_CALENDAR_EVENT:
         parameters = plan.parameters
 
-        # Validate event title.
         if not parameters.title:
             errors.append(
                 "Calendar event title is missing from action parameters."
@@ -129,6 +134,7 @@ def validate_action_parameters(
         elif not _datetime_is_grounded(
             value=parameters.start_time,
             body=body,
+            reference_time=reference_time,
         ):
             errors.append(
                 f"Calendar event start time '{parameters.start_time}' "
@@ -140,6 +146,7 @@ def validate_action_parameters(
             if not _datetime_is_grounded(
                 value=parameters.end_time,
                 body=body,
+                reference_time=reference_time,
             ):
                 errors.append(
                     f"Calendar event end time '{parameters.end_time}' "
@@ -197,9 +204,6 @@ def _amount_is_grounded(
     2450.0
     ₹2450
     INR 2450
-
-    It avoids substring false positives such as treating
-    2450 as present inside 24500.
     """
 
     try:
@@ -256,21 +260,6 @@ def _calendar_title_is_grounded(
     title: str,
     email_text: str,
 ) -> bool:
-    """
-    Check whether the calendar event title is sufficiently
-    supported by words found in the email.
-
-    Example:
-
-    Email:
-        Meeting with the client about the new project.
-
-    Title:
-        Client project meeting
-
-    This passes because the meaningful words overlap.
-    """
-
     title_words = _meaningful_words(title)
     email_words = _meaningful_words(email_text)
 
@@ -287,10 +276,11 @@ def _calendar_title_is_grounded(
 def _datetime_is_grounded(
     value: str,
     body: str,
+    reference_time: datetime | None = None,
 ) -> bool:
     """
-    Check whether a calendar datetime is supported by
-    information present in the email body.
+    Check whether a normalized calendar datetime is supported
+    by information present in the email body.
 
     Supports:
 
@@ -299,8 +289,15 @@ def _datetime_is_grounded(
     today 10:00
     tomorrow 10:00
 
-    The function requires the relevant date and time
-    information to appear in the email.
+    Also understands planner normalization such as:
+
+    Email:
+        tomorrow at 3:00 PM
+
+    Planner:
+        2026-09-18T15:00:00
+
+    when reference_time is 2026-09-17.
     """
 
     value = value.strip()
@@ -323,51 +320,79 @@ def _datetime_is_grounded(
 
     iso_match = re.fullmatch(
         r"(\d{4})-(\d{2})-(\d{2})[T ]"
-        r"(\d{2}):(\d{2})(?::\d{2})?",
+        r"(\d{2}):(\d{2})(?::(\d{2}))?",
         value,
     )
 
     if iso_match:
-        year, month, day, hour, minute = (
-            iso_match.group(1),
-            iso_match.group(2),
-            iso_match.group(3),
-            iso_match.group(4),
-            iso_match.group(5),
-        )
+        year = int(iso_match.group(1))
+        month = int(iso_match.group(2))
+        day = int(iso_match.group(3))
+        hour = int(iso_match.group(4))
+        minute = int(iso_match.group(5))
 
-        # Validate that the date is actually valid.
         try:
-            parsed_date = date(
-                int(year),
-                int(month),
-                int(day),
+            parsed_datetime = datetime(
+                year=year,
+                month=month,
+                day=day,
+                hour=hour,
+                minute=minute,
+                tzinfo=(
+                    reference_time.tzinfo
+                    if reference_time is not None
+                    else None
+                ),
             )
         except ValueError:
             return False
 
-        # Support common date representations.
+        # -------------------------------------------------
+        # Relative date normalization
+        # -------------------------------------------------
+
+        if reference_time is not None:
+            relative_dates = {
+                "today": reference_time.date(),
+                "tomorrow": (
+                    reference_time + timedelta(days=1)
+                ).date(),
+            }
+
+            for keyword, expected_date in relative_dates.items():
+                if parsed_datetime.date() != expected_date:
+                    continue
+
+                # The email must actually mention the
+                # relative day keyword.
+                if keyword not in body_lower:
+                    continue
+
+                # Check that the email contains the
+                # corresponding time.
+                if _time_is_grounded(
+                    hour=hour,
+                    minute=minute,
+                    body=body,
+                ):
+                    return True
+
+        # -------------------------------------------------
+        # Absolute date representation
+        # -------------------------------------------------
+
         date_formats = [
-            f"{year}-{month}-{day}",
+            f"{year:04d}-{month:02d}-{day:02d}",
             f"{month}/{day}/{year}",
             f"{month}-{day}-{year}",
-            f"{parsed_date.strftime('%B')} "
-            f"{parsed_date.day}, {year}",
-            f"{parsed_date.strftime('%b')} "
-            f"{parsed_date.day}, {year}",
-            f"{parsed_date.day} "
-            f"{parsed_date.strftime('%B')} {year}",
-            f"{parsed_date.day} "
-            f"{parsed_date.strftime('%b')} {year}",
-        ]
-
-        # Support zero-padded and non-zero-padded times.
-        hour_int = int(hour)
-        minute_int = int(minute)
-
-        time_formats = [
-            f"{hour}:{minute}",
-            f"{hour_int}:{minute_int:02d}",
+            f"{parsed_datetime.strftime('%B')} "
+            f"{parsed_datetime.day}, {year}",
+            f"{parsed_datetime.strftime('%b')} "
+            f"{parsed_datetime.day}, {year}",
+            f"{parsed_datetime.day} "
+            f"{parsed_datetime.strftime('%B')} {year}",
+            f"{parsed_datetime.day} "
+            f"{parsed_datetime.strftime('%b')} {year}",
         ]
 
         date_found = any(
@@ -375,9 +400,10 @@ def _datetime_is_grounded(
             for date_value in date_formats
         )
 
-        time_found = any(
-            time_value.lower() in body_lower
-            for time_value in time_formats
+        time_found = _time_is_grounded(
+            hour=hour,
+            minute=minute,
+            body=body,
         )
 
         return date_found and time_found
@@ -391,7 +417,10 @@ def _datetime_is_grounded(
     if len(parts) == 2:
         day_keyword, time_value = parts
 
-        if day_keyword.lower() in {"today", "tomorrow"}:
+        if day_keyword.lower() in {
+            "today",
+            "tomorrow",
+        }:
             if re.fullmatch(
                 r"\d{1,2}:\d{2}",
                 time_value,
@@ -404,15 +433,64 @@ def _datetime_is_grounded(
     return False
 
 
+def _time_is_grounded(
+    hour: int,
+    minute: int,
+    body: str,
+) -> bool:
+    """
+    Check whether the specified time appears in the email.
+
+    Supports:
+
+    15:00
+    3:00 PM
+    03:00 PM
+    3 PM
+    15.00
+    """
+
+    body_lower = body.lower()
+
+    # 24-hour formats.
+    twenty_four_hour_formats = {
+        f"{hour}:{minute:02d}",
+        f"{hour:02d}:{minute:02d}",
+        f"{hour}.{minute:02d}",
+        f"{hour:02d}.{minute:02d}",
+    }
+
+    if any(
+        time_value in body_lower
+        for time_value in twenty_four_hour_formats
+    ):
+        return True
+
+    # 12-hour format.
+    period = "am" if hour < 12 else "pm"
+
+    hour_12 = hour % 12
+
+    if hour_12 == 0:
+        hour_12 = 12
+
+    twelve_hour_formats = {
+        f"{hour_12}:{minute:02d} {period}",
+        f"{hour_12}:{minute:02d}{period}",
+        f"{hour_12} {period}",
+        f"{hour_12}{period}",
+    }
+
+    return any(
+        time_value in body_lower
+        for time_value in twelve_hour_formats
+    )
+
+
 def _description_is_grounded(
     description: str,
     email_text: str,
 ) -> bool:
-    """
-    Check whether the calendar description contains
-    enough meaningful information from the email.
-    """
-
     description_words = _meaningful_words(description)
     email_words = _meaningful_words(email_text)
 
@@ -434,16 +512,6 @@ def _reply_is_grounded(
     reply_text: str,
     email_text: str,
 ) -> bool:
-    """
-    Check whether a generated reply contains enough
-    meaningful words from the original email.
-
-    This does NOT require the reply to copy the email.
-
-    It is only intended as a safety check against a reply
-    that is completely unrelated to the original message.
-    """
-
     reply_words = _meaningful_words(reply_text)
     email_words = _meaningful_words(email_text)
 
@@ -462,10 +530,6 @@ def _reply_is_grounded(
 # =====================================================
 
 def _meaningful_words(text: str) -> set[str]:
-    """
-    Extract meaningful words while ignoring common stop words.
-    """
-
     stop_words = {
         "a",
         "an",
@@ -508,19 +572,6 @@ def _date_is_grounded(
     due_date: str,
     body: str,
 ) -> bool:
-    """
-    Check whether a YYYY-MM-DD date is represented
-    somewhere in the email body.
-
-    Supports:
-
-    2026-09-20
-    September 20, 2026
-    Sep 20, 2026
-    20 September 2026
-    20 Sep 2026
-    """
-
     if due_date in body:
         return True
 

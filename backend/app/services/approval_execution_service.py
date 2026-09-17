@@ -3,9 +3,11 @@ from pydantic import TypeAdapter
 
 from app.repositories.action_approval_repository import (
     get_action_approval,
+    update_action_approval_status,
 )
 from app.repositories.email_repository import (
     get_email_by_id,
+    mark_email_processed,
 )
 from app.schemas.action_plan import ActionPlan
 from app.services.action_safety import evaluate_action_safety
@@ -83,6 +85,7 @@ class ApprovalExecutionService:
             plan=action_plan,
             subject=email.subject,
             body=email.body,
+            reference_time=email.received_at,
         )
 
         if grounding_errors:
@@ -105,8 +108,25 @@ class ApprovalExecutionService:
 
         executor = ActionExecutor()
 
-        return executor.execute(
+        result = executor.execute(
             plan=safe_plan,
             db=db,
             email_id=email.id,
         )
+
+        # ---------------------------------------------
+        # 8. Update state
+        # ---------------------------------------------
+
+        update_action_approval_status(
+            db=db,
+            approval_id=approval_id,
+            status="EXECUTED",
+        )
+
+        mark_email_processed(
+            db=db,
+            email=email,
+        )
+
+        return result

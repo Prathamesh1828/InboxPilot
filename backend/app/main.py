@@ -4,7 +4,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.core.settings import settings
 from app.api.routes.gmail_auth import router as gmail_auth_router
 from app.api.routes.emails import router as emails_router
-
+from app.api.routes.approvals import router as approvals_router
 
 app = FastAPI(
     title=settings.app_name,
@@ -24,6 +24,7 @@ app.add_middleware(
 # Routers
 app.include_router(gmail_auth_router)
 app.include_router(emails_router)
+app.include_router(approvals_router)
 
 
 @app.get("/")
