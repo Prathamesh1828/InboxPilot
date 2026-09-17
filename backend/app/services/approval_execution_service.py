@@ -77,42 +77,50 @@ class ApprovalExecutionService:
             approval.action_plan
         )
 
-        # ---------------------------------------------
-        # 5. Re-run parameter grounding
-        # ---------------------------------------------
+        try:
+            # ---------------------------------------------
+            # 5. Re-run parameter grounding
+            # ---------------------------------------------
 
-        grounding_errors = validate_action_parameters(
-            plan=action_plan,
-            subject=email.subject,
-            body=email.body,
-            reference_time=email.received_at,
-        )
-
-        if grounding_errors:
-            raise ValueError(
-                "Approved action failed grounding validation: "
-                + "; ".join(grounding_errors)
+            grounding_errors = validate_action_parameters(
+                plan=action_plan,
+                subject=email.subject,
+                body=email.body,
+                reference_time=email.received_at,
             )
 
-        # ---------------------------------------------
-        # 6. Re-evaluate deterministic safety
-        # ---------------------------------------------
+            if grounding_errors:
+                raise ValueError(
+                    "Approved action failed grounding validation: "
+                    + "; ".join(grounding_errors)
+                )
 
-        safe_plan = evaluate_action_safety(
-            action_plan
-        )
+            # ---------------------------------------------
+            # 6. Re-evaluate deterministic safety
+            # ---------------------------------------------
 
-        # ---------------------------------------------
-        # 7. Execute through existing executor
-        # ---------------------------------------------
+            safe_plan = evaluate_action_safety(
+                action_plan
+            )
 
-        executor = ActionExecutor()
+            # ---------------------------------------------
+            # 7. Execute through existing executor
+            # ---------------------------------------------
 
-        result = executor.execute(
-            plan=safe_plan,
-            db=db,
-            email_id=email.id,
-        )
+            executor = ActionExecutor()
+
+            result = executor.execute(
+                plan=safe_plan,
+                db=db,
+                email_id=email.id,
+            )
+        except Exception as exc:
+            update_action_approval_status(
+                db=db,
+                approval_id=approval_id,
+                status="PENDING",
+            )
+            raise exc
 
         # ---------------------------------------------
         # 8. Update state
