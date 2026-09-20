@@ -27,7 +27,7 @@ class ApprovalService:
                 f"Approval {approval_id} not found."
             )
 
-        if approval.status != "PENDING":
+        if approval.status not in ("PENDING", "EXECUTION_FAILED"):
             raise ValueError(
                 f"Approval {approval_id} is already "
                 f"{approval.status}."

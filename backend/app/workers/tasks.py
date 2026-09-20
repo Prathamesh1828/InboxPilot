@@ -23,6 +23,8 @@ class DatabaseTask(Task):
 _TERMINAL_STATUSES = {
     "COMPLETED",
     "APPROVAL_PENDING",
+    "GROUNDING_REVIEW",
+    "EXECUTED",
 }
 
 

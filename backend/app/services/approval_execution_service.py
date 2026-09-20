@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from pydantic import TypeAdapter
 
 from app.repositories.action_approval_repository import (
+    atomic_transition_status,
     get_action_approval,
     update_action_approval_status,
 )
@@ -48,19 +49,26 @@ class ApprovalExecutionService:
             )
 
         # ---------------------------------------------
-        # 2. Verify approval status
+        # 2. Atomic status transition: APPROVED → EXECUTING
+        #
+        # This is a filtered UPDATE so only ONE caller
+        # wins when two requests race on the same approval.
         # ---------------------------------------------
 
-        if approval.status != "APPROVED":
-            logger.warning(
-                "Execution rejected for approval %d: status is %s",
-                approval_id,
-                approval.status,
-            )
+        transitioned = atomic_transition_status(
+            db=db,
+            approval_id=approval_id,
+            from_status="APPROVED",
+            to_status="EXECUTING",
+        )
+
+        if not transitioned:
+            # Either already executing, executed, or not approved
+            db.refresh(approval)
             raise ValueError(
-                f"Approval {approval_id} has status "
-                f"{approval.status}. Only APPROVED actions "
-                "can be executed."
+                f"Approval {approval_id} cannot be executed. "
+                f"Current status: {approval.status}. "
+                "Only APPROVED actions can be executed."
             )
 
         # ---------------------------------------------
@@ -73,6 +81,11 @@ class ApprovalExecutionService:
         )
 
         if email is None:
+            update_action_approval_status(
+                db=db,
+                approval_id=approval_id,
+                status="EXECUTION_FAILED",
+            )
             raise ValueError(
                 f"Email {approval.email_id} not found."
             )
@@ -134,14 +147,14 @@ class ApprovalExecutionService:
             )
         except Exception as exc:
             logger.error(
-                "Execution failed for approval %d, reverting to PENDING: %s",
+                "Execution failed for approval %d, marking EXECUTION_FAILED: %s",
                 approval_id,
                 exc,
             )
             update_action_approval_status(
                 db=db,
                 approval_id=approval_id,
-                status="PENDING",
+                status="EXECUTION_FAILED",
             )
             raise exc
 

@@ -92,3 +92,39 @@ def update_action_approval_status(
 
 
     return approval
+
+
+def atomic_transition_status(
+    db: Session,
+    approval_id: int,
+    from_status: str,
+    to_status: str,
+) -> bool:
+    """
+    Atomically transition an approval from one status to another.
+
+    Uses a single filtered UPDATE so only one caller wins
+    when two requests race on the same approval.
+
+    Returns True if the transition succeeded, False if the
+    approval was not in the expected from_status.
+    """
+
+    rows_updated = (
+        db.query(ActionApproval)
+        .filter(
+            ActionApproval.id == approval_id,
+            ActionApproval.status == from_status,
+        )
+        .update(
+            {
+                "status": to_status,
+                "resolved_at": datetime.now(timezone.utc),
+            },
+            synchronize_session="fetch",
+        )
+    )
+
+    db.commit()
+
+    return rows_updated > 0

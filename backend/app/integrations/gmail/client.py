@@ -91,13 +91,18 @@ def archive_email(
         account=account,
     )
 
-    service.users().messages().modify(
-        userId="me",
-        id=message_id,
-        body={
-            "removeLabelIds": ["INBOX"],
-        },
-    ).execute()
+    try:
+        service.users().messages().modify(
+            userId="me",
+            id=message_id,
+            body={
+                "removeLabelIds": ["INBOX"],
+            },
+        ).execute()
+    except Exception as exc:
+        raise RuntimeError(
+            f"Gmail API error while archiving message {message_id}: {exc}"
+        ) from exc
 
     return message_id
 

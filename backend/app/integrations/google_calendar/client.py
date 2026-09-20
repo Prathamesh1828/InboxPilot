@@ -58,13 +58,18 @@ def create_calendar_event(
         },
     }
 
-    created_event = (
-        service.events()
-        .insert(
-            calendarId="primary",
-            body=event_body,
+    try:
+        created_event = (
+            service.events()
+            .insert(
+                calendarId="primary",
+                body=event_body,
+            )
+            .execute()
         )
-        .execute()
-    )
+    except Exception as exc:
+        raise RuntimeError(
+            f"Google Calendar API error while creating event: {exc}"
+        ) from exc
 
     return created_event["id"]
