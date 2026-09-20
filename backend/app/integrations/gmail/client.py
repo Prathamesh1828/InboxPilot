@@ -139,14 +139,31 @@ def create_gmail_draft(
     if thread_id:
         draft_body["message"]["threadId"] = thread_id
 
-    draft = (
-        service.users()
-        .drafts()
-        .create(
-            userId="me",
-            body=draft_body,
+    try:
+        draft = (
+            service.users()
+            .drafts()
+            .create(
+                userId="me",
+                body=draft_body,
+            )
+            .execute()
         )
-        .execute()
-    )
+    except Exception as e:
+        # If testing with fake emails, Gmail rejects fake threadIds with a 400 error.
+        # We fallback to creating a standalone draft without the threadId.
+        if "Invalid thread_id value" in str(e) and "threadId" in draft_body["message"]:
+            del draft_body["message"]["threadId"]
+            draft = (
+                service.users()
+                .drafts()
+                .create(
+                    userId="me",
+                    body=draft_body,
+                )
+                .execute()
+            )
+        else:
+            raise e
 
     return draft["id"]

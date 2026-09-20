@@ -11,7 +11,7 @@ from app.schemas.action_plan import (
 from app.services.action_safety import evaluate_action_safety
 
 
-def test_safety_policy(
+def check_safety_policy(
     name: str,
     plan,
     expected_risk: RiskLevel,
@@ -143,42 +143,42 @@ def main() -> None:
     print("SAFETY POLICY RESULTS")
     print("-" * 70)
 
-    test_safety_policy(
+    check_safety_policy(
         name="LOG_BILL",
         plan=bill_plan,
         expected_risk=RiskLevel.LOW,
         expected_approval=False,
     )
 
-    test_safety_policy(
+    check_safety_policy(
         name="CREATE_REMINDER",
         plan=reminder_plan,
         expected_risk=RiskLevel.LOW,
         expected_approval=False,
     )
 
-    test_safety_policy(
+    check_safety_policy(
         name="CREATE_CALENDAR_EVENT",
         plan=calendar_plan,
         expected_risk=RiskLevel.MEDIUM,
         expected_approval=True,
     )
 
-    test_safety_policy(
+    check_safety_policy(
         name="DRAFT_REPLY",
         plan=draft_plan,
         expected_risk=RiskLevel.MEDIUM,
         expected_approval=True,
     )
 
-    test_safety_policy(
+    check_safety_policy(
         name="ARCHIVE",
         plan=archive_plan,
         expected_risk=RiskLevel.LOW,
         expected_approval=False,
     )
 
-    test_safety_policy(
+    check_safety_policy(
         name="NO_ACTION",
         plan=no_action_plan,
         expected_risk=RiskLevel.LOW,

@@ -1,3 +1,4 @@
+import logging
 from sqlalchemy.orm import Session
 from pydantic import TypeAdapter
 
@@ -15,6 +16,8 @@ from app.services.executor import ActionExecutor
 from app.services.parameter_grounding import (
     validate_action_parameters,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ApprovalExecutionService:
@@ -49,6 +52,11 @@ class ApprovalExecutionService:
         # ---------------------------------------------
 
         if approval.status != "APPROVED":
+            logger.warning(
+                "Execution rejected for approval %d: status is %s",
+                approval_id,
+                approval.status,
+            )
             raise ValueError(
                 f"Approval {approval_id} has status "
                 f"{approval.status}. Only APPROVED actions "
@@ -81,6 +89,10 @@ class ApprovalExecutionService:
             # ---------------------------------------------
             # 5. Re-run parameter grounding
             # ---------------------------------------------
+            logger.info(
+                "Validating action parameters for approval %d",
+                approval_id,
+            )
 
             grounding_errors = validate_action_parameters(
                 plan=action_plan,
@@ -108,6 +120,12 @@ class ApprovalExecutionService:
             # ---------------------------------------------
 
             executor = ActionExecutor()
+            
+            logger.info(
+                "Executing action %s for approval %d",
+                safe_plan.action.value,
+                approval_id,
+            )
 
             result = executor.execute(
                 plan=safe_plan,
@@ -115,6 +133,11 @@ class ApprovalExecutionService:
                 email_id=email.id,
             )
         except Exception as exc:
+            logger.error(
+                "Execution failed for approval %d, reverting to PENDING: %s",
+                approval_id,
+                exc,
+            )
             update_action_approval_status(
                 db=db,
                 approval_id=approval_id,
@@ -125,6 +148,11 @@ class ApprovalExecutionService:
         # ---------------------------------------------
         # 8. Update state
         # ---------------------------------------------
+
+        logger.info(
+            "Execution successful for approval %d, updating state",
+            approval_id,
+        )
 
         update_action_approval_status(
             db=db,

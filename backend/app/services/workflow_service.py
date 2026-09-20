@@ -1,9 +1,12 @@
+import logging
 from sqlalchemy.orm import Session
 
 from app.agents.graph import build_planning_graph
 from app.agents.state import InboxPilotState
 from app.models.email import Email
 from app.repositories.email_repository import get_email_by_id
+
+logger = logging.getLogger(__name__)
 
 
 class WorkflowService:
@@ -53,6 +56,11 @@ class WorkflowService:
             category=EmailCategory(email.category),
             confidence=email.classification_confidence or 0.0,
             reasoning=email.classification_reasoning,
+        )
+
+        logger.info(
+            "Invoking planning graph for email %d",
+            email_id,
         )
 
         graph = build_planning_graph(db)

@@ -205,6 +205,30 @@ def approval_node(
         action_plan=action_plan.model_dump(mode="json"),
     )
 
+    from app.integrations.telegram.bot import send_approval_notification
+    from app.repositories.telegram_connection_repository import get_telegram_connection_by_user_id
+    from app.models.google_account import GoogleAccount
+    from app.models.email import Email
+    
+    # In the single-user setup, the user_id corresponds to the first GoogleAccount
+    account = db.query(GoogleAccount).first()
+    if account:
+        connection = get_telegram_connection_by_user_id(db, user_id=int(account.id)) # type: ignore
+        if connection and connection.telegram_chat_id:
+            email_record = db.query(Email).get(state.email_id)
+            gmail_thread_id = email_record.thread_id if email_record else None
+            gmail_message_id = email_record.provider_message_id if email_record else None
+            
+            send_approval_notification(
+                chat_id=str(connection.telegram_chat_id), # type: ignore
+                approval_id=approval.id,
+                action=action_plan.action.value,
+                email_subject=state.subject,
+                risk_level=action_plan.risk_level.value,
+                gmail_thread_id=gmail_thread_id,
+                gmail_message_id=gmail_message_id,
+            )
+
     return {
         "approval_id": approval.id,
         "workflow_status": "APPROVAL_PENDING",

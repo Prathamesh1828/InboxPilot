@@ -60,6 +60,7 @@ def validate_action_parameters(
             if not _date_is_grounded(
                 due_date=parameters.due_date,
                 body=body,
+                reference_time=reference_time,
             ):
                 errors.append(
                     f"Due date '{parameters.due_date}' was not clearly "
@@ -100,6 +101,7 @@ def validate_action_parameters(
         elif not _date_is_grounded(
             due_date=parameters.reminder_date,
             body=body,
+            reference_time=reference_time,
         ):
             errors.append(
                 f"Reminder date '{parameters.reminder_date}' "
@@ -377,6 +379,11 @@ def _datetime_is_grounded(
                 ):
                     return True
 
+            weekday_name = parsed_datetime.strftime("%A").lower()
+            if weekday_name in body_lower:
+                if _time_is_grounded(hour=hour, minute=minute, body=body):
+                    return True
+
         # -------------------------------------------------
         # Absolute date representation
         # -------------------------------------------------
@@ -571,6 +578,7 @@ def _meaningful_words(text: str) -> set[str]:
 def _date_is_grounded(
     due_date: str,
     body: str,
+    reference_time: datetime | None = None,
 ) -> bool:
     if due_date in body:
         return True
@@ -597,6 +605,21 @@ def _date_is_grounded(
     except ValueError:
         return False
 
+    body_lower = body.lower()
+
+    if reference_time is not None:
+        relative_dates = {
+            "today": reference_time.date(),
+            "tomorrow": (reference_time + timedelta(days=1)).date(),
+        }
+        for keyword, expected_date in relative_dates.items():
+            if parsed_date == expected_date and keyword in body_lower:
+                return True
+                
+        weekday_name = parsed_date.strftime("%A").lower()
+        if weekday_name in body_lower:
+            return True
+
     month_name = parsed_date.strftime("%B")
     month_short = parsed_date.strftime("%b")
 
@@ -606,8 +629,6 @@ def _date_is_grounded(
         f"{day} {month_name} {year}",
         f"{day} {month_short} {year}",
     ]
-
-    body_lower = body.lower()
 
     return any(
         readable_date.lower() in body_lower

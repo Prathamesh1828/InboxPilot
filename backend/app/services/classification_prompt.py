@@ -34,13 +34,15 @@ Spam, advertising, marketing, unsolicited promotional content,
 or messages that are safe to archive.
 
 OTHER:
-A general informational email or notification that does not
-require user action and does not clearly fit BILL, MEETING,
+A general informational email, notification, OR an email that
+requires a direct written reply (e.g., questions, follow-ups,
+general correspondence) that does not clearly fit BILL, MEETING,
 FORM, REMINDER, or SPAM.
 
 Examples include delivery status notifications, repository
 activity notifications, account activity notifications,
-system notifications, and general updates.
+system notifications, general updates, and emails asking a
+direct question or requesting a reply.
 
 Rules:
 
@@ -49,7 +51,7 @@ Rules:
 3. Give a short reasoning explaining the classification.
 4. Base the classification only on the email content provided.
 5. Never invent amounts, dates, people, or other information.
-6. If the email is ambiguous, use OTHER and provide a lower confidence.
+6. If the email is ambiguous, use OTHER and provide a lower confidence. However, if it clearly asks a question or requests a reply, use OTHER with high confidence (>= 0.90).
 7. Promotional emails should generally be classified as SPAM.
 8. A genuine invoice or payment request should be classified as BILL.
 9. A scheduling request should be classified as MEETING.

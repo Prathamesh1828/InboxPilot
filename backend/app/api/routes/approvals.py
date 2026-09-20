@@ -119,7 +119,7 @@ def approve_action(
 
         return {
             "approval_id": approval_id,
-            "status": "APPROVED",
+            "status": "EXECUTED",
             "message": "Action approved and executed successfully.",
             "execution_result": execution_result,
         }

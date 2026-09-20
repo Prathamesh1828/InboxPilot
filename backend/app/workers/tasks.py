@@ -1,13 +1,29 @@
+import logging
+
 from celery import Task
 
 from app.db.database import SessionLocal
+from app.repositories.email_repository import get_email_by_id
 from app.services.email_pipeline import EmailPipeline
 from app.services.workflow_service import WorkflowService
 from app.workers.celery_app import celery_app
 
+logger = logging.getLogger(__name__)
+
 
 class DatabaseTask(Task):
     """Base Celery task that provides database-session handling."""
+
+
+# ---------------------------------------------------------
+# Terminal statuses — emails in these states must not
+# be processed again.
+# ---------------------------------------------------------
+
+_TERMINAL_STATUSES = {
+    "COMPLETED",
+    "APPROVAL_PENDING",
+}
 
 
 @celery_app.task(
@@ -26,11 +42,38 @@ def process_email(
     db = SessionLocal()
 
     try:
+        email = get_email_by_id(db=db, email_id=email_id)
+
+        if email is None:
+            logger.error(
+                "process_email: email %d not found", email_id
+            )
+            return {"email_id": email_id, "error": "not_found"}
+
+        if email.status in _TERMINAL_STATUSES:
+            logger.info(
+                "process_email: skipping email %d "
+                "(status=%s)",
+                email_id,
+                email.status,
+            )
+            return {
+                "email_id": email_id,
+                "workflow_status": email.status,
+                "skipped": True,
+            }
+
         workflow_service = WorkflowService()
 
         result = workflow_service.process_email(
             db=db,
             email_id=email_id,
+        )
+
+        logger.info(
+            "process_email completed for email %d: %s",
+            email_id,
+            result.workflow_status,
         )
 
         return {
@@ -42,9 +85,10 @@ def process_email(
         }
 
     except Exception as exc:
-        print(
-            f"[Celery] process_email failed for "
-            f"email {email_id}: {exc}"
+        logger.error(
+            "process_email failed for email %d: %s",
+            email_id,
+            exc,
         )
 
         raise self.retry(
@@ -83,9 +127,31 @@ def process_email_pipeline(
     db = SessionLocal()
 
     try:
-        print(
-            f"[Celery] Starting email pipeline "
-            f"for email {email_id}"
+        email = get_email_by_id(db=db, email_id=email_id)
+
+        if email is None:
+            logger.error(
+                "process_email_pipeline: email %d not found",
+                email_id,
+            )
+            return {"email_id": email_id, "error": "not_found"}
+
+        if email.status in _TERMINAL_STATUSES:
+            logger.info(
+                "process_email_pipeline: skipping email %d "
+                "(status=%s)",
+                email_id,
+                email.status,
+            )
+            return {
+                "email_id": email_id,
+                "workflow_status": email.status,
+                "skipped": True,
+            }
+
+        logger.info(
+            "Starting email pipeline for email %d",
+            email_id,
         )
 
         pipeline = EmailPipeline()
@@ -95,8 +161,10 @@ def process_email_pipeline(
             email_id=email_id,
         )
 
-        print(
-            f"[Celery] Email {email_id} pipeline completed."
+        logger.info(
+            "Email %d pipeline completed: %s",
+            email_id,
+            result.workflow_status,
         )
 
         return {
@@ -133,9 +201,10 @@ def process_email_pipeline(
         }
 
     except Exception as exc:
-        print(
-            f"[Celery] process_email_pipeline failed "
-            f"for email {email_id}: {exc}"
+        logger.error(
+            "process_email_pipeline failed for email %d: %s",
+            email_id,
+            exc,
         )
 
         raise self.retry(

@@ -1,3 +1,4 @@
+import logging
 from sqlalchemy.orm import Session
 
 from app.models.email import Email
@@ -7,6 +8,8 @@ from app.repositories.email_repository import (
 )
 from app.services.classification_gate import evaluate_classification
 from app.services.classifier import EmailClassifier
+
+logger = logging.getLogger(__name__)
 
 
 class ClassificationService:
@@ -51,6 +54,14 @@ class ClassificationService:
             classification
         )
 
+        logger.info(
+            "Classification completed for email %d: category=%s confidence=%.2f status=%s",
+            email.id,
+            classification.category.value,
+            classification.confidence,
+            status,
+        )
+
         return update_email_classification(
             db=db,
             email=email,
@@ -70,6 +81,11 @@ class ClassificationService:
 
         pending_emails = get_pending_emails(db)
 
+        logger.info(
+            "Found %d pending emails to classify",
+            len(pending_emails),
+        )
+
         classified_emails: list[Email] = []
 
         for email in pending_emails:
@@ -82,9 +98,10 @@ class ClassificationService:
                 classified_emails.append(result)
 
             except Exception as exc:
-                print(
-                    f"❌ Failed to classify email "
-                    f"{email.id}: {exc}"
+                logger.error(
+                    "Failed to classify email %d: %s",
+                    email.id,
+                    exc,
                 )
 
         return classified_emails

@@ -1,3 +1,5 @@
+import logging
+
 from sqlalchemy.orm import Session
 
 from app.integrations.gmail.fetcher import fetch_inbox_messages
@@ -5,6 +7,8 @@ from app.integrations.gmail.parser import parse_gmail_message
 from app.models.google_account import GoogleAccount
 from app.repositories.email_repository import create_email_if_not_exists
 from app.workers.tasks import process_email_pipeline
+
+logger = logging.getLogger(__name__)
 
 
 def ingest_inbox_emails(
@@ -50,34 +54,37 @@ def ingest_inbox_emails(
             if created:
                 inserted += 1
 
-                print(
-                    f"[Ingestion] New email created: "
-                    f"{email.id}"
+                logger.info(
+                    "New email ingested: id=%d subject=%s",
+                    email.id,
+                    email.subject,
                 )
 
                 # Send the newly created email to Celery.
                 task = process_email_pipeline.delay(email.id)
 
-                print(
-                    f"[Ingestion] Celery task queued: "
-                    f"{task.id}"
+                logger.info(
+                    "Celery task queued: email=%d task=%s",
+                    email.id,
+                    task.id,
                 )
 
             else:
                 skipped += 1
 
-                print(
-                    f"[Ingestion] Email already exists: "
-                    f"{email.id}"
+                logger.debug(
+                    "Email already exists: id=%d",
+                    email.id,
                 )
 
         except Exception as e:
             failed += 1
 
-            print(
-                "❌ Failed to ingest Gmail message "
-                f"{message.get('id')}: "
-                f"{type(e).__name__}: {e}"
+            logger.error(
+                "Failed to ingest Gmail message %s: %s: %s",
+                message.get("id"),
+                type(e).__name__,
+                e,
             )
 
     return {

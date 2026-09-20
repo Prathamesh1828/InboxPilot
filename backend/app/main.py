@@ -1,10 +1,14 @@
 from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
 
+from app.core.logging import setup_logging
 from app.core.settings import settings
 from app.api.routes.gmail_auth import router as gmail_auth_router
 from app.api.routes.emails import router as emails_router
 from app.api.routes.approvals import router as approvals_router
+from app.api.routes.telegram import router as telegram_router
+
+setup_logging()
 
 app = FastAPI(
     title=settings.app_name,
@@ -25,6 +29,7 @@ app.add_middleware(
 app.include_router(gmail_auth_router)
 app.include_router(emails_router)
 app.include_router(approvals_router)
+app.include_router(telegram_router)
 
 
 @app.get("/")

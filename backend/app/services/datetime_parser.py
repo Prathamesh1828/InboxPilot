@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timedelta
 
 
@@ -12,31 +13,40 @@ def parse_calendar_datetime(
     - ISO datetime
     - tomorrow HH:MM
     - today HH:MM
+    - tomorrow at 3:00 PM
+    - today at 10:00 AM
+    - tomorrow at 15:00
     """
 
     value = value.strip()
 
     # Already a concrete ISO datetime.
     try:
-        return datetime.fromisoformat(value)
+        dt = datetime.fromisoformat(value)
+        if dt.tzinfo is None and reference_time is not None:
+            dt = dt.replace(tzinfo=reference_time.tzinfo)
+        return dt
     except ValueError:
         pass
 
-    parts = value.split()
+    pattern = r"^(today|tomorrow)(?:\s+at)?\s+(\d{1,2}):(\d{2})(?:\s+(AM|PM|am|pm))?$"
+    match = re.match(pattern, value, flags=re.IGNORECASE)
 
-    if len(parts) != 2:
+    if not match:
         raise ValueError(
             f"Unsupported calendar datetime format: {value}"
         )
 
-    day_keyword, time_value = parts
+    day_keyword, hour_str, minute_str, ampm = match.groups()
+    hour = int(hour_str)
+    minute = int(minute_str)
 
-    try:
-        hour, minute = map(int, time_value.split(":"))
-    except ValueError as exc:
-        raise ValueError(
-            f"Invalid calendar time: {value}"
-        ) from exc
+    if ampm:
+        ampm = ampm.upper()
+        if ampm == "PM" and hour < 12:
+            hour += 12
+        elif ampm == "AM" and hour == 12:
+            hour = 0
 
     if not 0 <= hour <= 23 or not 0 <= minute <= 59:
         raise ValueError(
@@ -45,12 +55,10 @@ def parse_calendar_datetime(
 
     if day_keyword.lower() == "today":
         target_date = reference_time.date()
-
     elif day_keyword.lower() == "tomorrow":
         target_date = (
             reference_time + timedelta(days=1)
         ).date()
-
     else:
         raise ValueError(
             f"Unsupported calendar date keyword: {day_keyword}"

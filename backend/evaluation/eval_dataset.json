@@ -1,0 +1,72 @@
+[
+  {
+    "id": "synthetic_001",
+    "subject": "Invoice for web hosting",
+    "body": "Hi, your web hosting invoice for $150.00 is due on 2026-10-01. Please pay promptly.",
+    "expected_category": "BILL",
+    "expected_action": "LOG_BILL"
+  },
+  {
+    "id": "synthetic_002",
+    "subject": "Let's catch up",
+    "body": "Hi there, it's been a while! We should catch up soon.",
+    "expected_category": "MEETING",
+    "expected_action": "NO_ACTION"
+  },
+  {
+    "id": "synthetic_003",
+    "subject": "Lunch meeting tomorrow",
+    "body": "Let's grab lunch tomorrow at 1:00 PM to discuss the new project.",
+    "expected_category": "MEETING",
+    "expected_action": "CREATE_CALENDAR_EVENT"
+  },
+  {
+    "id": "synthetic_004",
+    "subject": "Please submit your tax forms",
+    "body": "Please complete and submit your W-2 forms by Friday at the latest.",
+    "expected_category": "FORM",
+    "expected_action": "CREATE_REMINDER"
+  },
+  {
+    "id": "synthetic_005",
+    "subject": "Don't forget to renew your license",
+    "body": "This is a reminder that your driving license will expire next month. Make sure to renew it.",
+    "expected_category": "REMINDER",
+    "expected_action": "CREATE_REMINDER"
+  },
+  {
+    "id": "synthetic_006",
+    "subject": "Get 50% off on premium shoes!",
+    "body": "Hurry up! Our summer sale ends soon. Get 50% off on all premium shoes.",
+    "expected_category": "SPAM",
+    "expected_action": "ARCHIVE"
+  },
+  {
+    "id": "synthetic_007",
+    "subject": "Your package has been delivered",
+    "body": "Your Amazon package containing 'Wireless Mouse' was delivered to your front porch.",
+    "expected_category": "OTHER",
+    "expected_action": "NO_ACTION"
+  },
+  {
+    "id": "synthetic_008",
+    "subject": "Client sync",
+    "body": "Please schedule a client sync for next Monday at 10 AM.",
+    "expected_category": "MEETING",
+    "expected_action": "CREATE_CALENDAR_EVENT"
+  },
+  {
+    "id": "synthetic_009",
+    "subject": "Action required: Verify your account",
+    "body": "Click the link below to verify your email address.",
+    "expected_category": "FORM",
+    "expected_action": "NO_ACTION"
+  },
+  {
+    "id": "synthetic_010",
+    "subject": "Upcoming subscription renewal",
+    "body": "Your annual subscription for ACME software will renew on October 15th for $299.",
+    "expected_category": "BILL",
+    "expected_action": "LOG_BILL"
+  }
+]

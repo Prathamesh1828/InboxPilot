@@ -108,6 +108,22 @@ DRAFT_REPLY
 ARCHIVE
 NO_ACTION
 
+Category-specific guidance:
+
+If the category is MEETING and the email mentions a specific time
+(e.g. "tomorrow at 3 PM", "Monday at 10:00 AM", a date with a time),
+you MUST choose CREATE_CALENDAR_EVENT. Do NOT choose NO_ACTION when
+a meeting time is clearly stated.
+
+If the category is BILL and the email contains an amount,
+you MUST choose LOG_BILL.
+
+If the category is REMINDER and the email contains a future task
+or deadline, you MUST choose CREATE_REMINDER.
+
+If the category is OTHER and the email asks a direct question,
+requests a reply, or expects correspondence, you MUST choose DRAFT_REPLY.
+
 Parameter rules:
 
 LOG_BILL:
@@ -153,6 +169,64 @@ Return valid JSON only.
             RawActionPlan,
             structured_llm.invoke(prompt),
         )
+
+        # Deterministic Planner Reliability Guards
+        current_action = raw_plan.action.strip().upper()
+        body_lower = body.lower()
+        
+        # 1. Guard for MEETING
+        if category == "MEETING" and current_action == "NO_ACTION":
+            has_scheduling_intent = "schedule" in body_lower or "meeting" in body_lower
+            time_keywords = ["tomorrow", "today", "monday", "tuesday", "wednesday", "thursday", "friday", "am", "pm", ":00", ":30"]
+            has_time = any(kw in body_lower for kw in time_keywords)
+
+            if has_scheduling_intent and has_time:
+                # Retry prompt with a strong correction
+                retry_prompt = prompt + (
+                    "\n\nCRITICAL CORRECTION: You incorrectly selected NO_ACTION. "
+                    "This email contains an explicit scheduling/meeting request with a usable meeting time. "
+                    "You MUST output CREATE_CALENDAR_EVENT and extract the start_time."
+                )
+                raw_plan = cast(
+                    RawActionPlan,
+                    structured_llm.invoke(retry_prompt),
+                )
+                
+                # If it still refuses, force the action to prevent silent NO_ACTION failures
+                new_action = raw_plan.action.strip().upper()
+                if new_action == "NO_ACTION":
+                    raw_plan.action = "CREATE_CALENDAR_EVENT"
+                    raw_plan.parameters = {
+                        "title": subject or "Meeting",
+                        "start_time": "the time mentioned in the email",
+                        "description": "Fallback event creation due to LLM planner failure."
+                    }
+                    raw_plan.reasoning = "Deterministic fallback due to LLM planner failure."
+
+        # 2. Guard for OTHER (Draft Reply)
+        if category == "OTHER" and current_action == "NO_ACTION":
+            has_reply_intent = "reply" in body_lower or "let me know" in body_lower or "get back to me" in body_lower or "?" in body_lower
+            
+            if has_reply_intent:
+                # Retry prompt with a strong correction
+                retry_prompt = prompt + (
+                    "\n\nCRITICAL CORRECTION: You incorrectly selected NO_ACTION. "
+                    "This email explicitly asks a question or requests a reply. "
+                    "You MUST output DRAFT_REPLY and provide the reply_text."
+                )
+                raw_plan = cast(
+                    RawActionPlan,
+                    structured_llm.invoke(retry_prompt),
+                )
+                
+                # If it still refuses, force the action to prevent silent NO_ACTION failures
+                new_action = raw_plan.action.strip().upper()
+                if new_action == "NO_ACTION":
+                    raw_plan.action = "DRAFT_REPLY"
+                    raw_plan.parameters = {
+                        "reply_text": "I received your email and will get back to you shortly."
+                    }
+                    raw_plan.reasoning = "Deterministic fallback due to LLM planner failure."
 
         return self._convert_to_action_plan(raw_plan)
 

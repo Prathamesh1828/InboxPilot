@@ -1,3 +1,5 @@
+import logging
+
 from sqlalchemy.orm import Session
 
 from app.agents.state import InboxPilotState
@@ -9,6 +11,8 @@ from app.schemas.classification import (
     EmailCategory,
     EmailClassification,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class EmailPipeline:
@@ -57,9 +61,10 @@ class EmailPipeline:
                 f"Email with ID {email_id} not found."
             )
 
-        print(
-            f"[Pipeline] Email {email_id} loaded. "
-            f"Current status: {email.status}"
+        logger.info(
+            "Email %d loaded (status=%s)",
+            email_id,
+            email.status,
         )
 
         # ---------------------------------------------------------
@@ -67,9 +72,9 @@ class EmailPipeline:
         # ---------------------------------------------------------
 
         if email.status == "PENDING":
-            print(
-                f"[Pipeline] Starting classification "
-                f"for email {email_id}..."
+            logger.info(
+                "Classifying email %d",
+                email_id,
             )
 
             email = self.classification_service.classify_email(
@@ -77,39 +82,24 @@ class EmailPipeline:
                 email=email,
             )
 
-            print(
-                f"[Pipeline] Classification completed for "
-                f"email {email_id}."
-            )
-
-            print(
-                f"[Pipeline] Category: {email.category}"
-            )
-
-            print(
-                f"[Pipeline] Confidence: "
-                f"{email.classification_confidence}"
-            )
-
-            print(
-                f"[Pipeline] Status after classification: "
-                f"{email.status}"
+            logger.info(
+                "Email %d classified: category=%s confidence=%.2f status=%s",
+                email_id,
+                email.category,
+                email.classification_confidence or 0.0,
+                email.status,
             )
 
         elif email.status == "CLASSIFIED":
-            print(
-                f"[Pipeline] Email {email_id} is already classified."
-            )
-
-            print(
-                "[Pipeline] Skipping classification and "
-                "resuming workflow."
+            logger.info(
+                "Email %d already classified, resuming workflow",
+                email_id,
             )
 
         elif email.status == "REVIEW":
-            print(
-                f"[Pipeline] Email {email_id} is already "
-                "waiting for human review."
+            logger.info(
+                "Email %d is awaiting human review",
+                email_id,
             )
 
             return self._build_review_state(email)
@@ -125,12 +115,9 @@ class EmailPipeline:
         # ---------------------------------------------------------
 
         if email.status == "REVIEW":
-            print(
-                f"[Pipeline] Email {email_id} requires human review."
-            )
-
-            print(
-                f"[Pipeline] Stopping processing for email {email_id}."
+            logger.info(
+                "Email %d requires human review, stopping",
+                email_id,
             )
 
             return self._build_review_state(email)
@@ -145,14 +132,9 @@ class EmailPipeline:
         # STEP 4: ACTION WORKFLOW
         # ---------------------------------------------------------
 
-        print(
-            f"[Pipeline] Email {email_id} passed "
-            "the confidence gate."
-        )
-
-        print(
-            f"[Pipeline] Starting action workflow "
-            f"for email {email_id}..."
+        logger.info(
+            "Email %d passed confidence gate, starting workflow",
+            email_id,
         )
 
         workflow_result = self.workflow_service.process_email(
@@ -164,48 +146,23 @@ class EmailPipeline:
         # STEP 5: WORKFLOW RESULT
         # ---------------------------------------------------------
 
-        print(
-            f"[Pipeline] Action workflow completed "
-            f"for email {email_id}."
+        logger.info(
+            "Email %d workflow completed: status=%s action=%s approval_id=%s",
+            email_id,
+            workflow_result.workflow_status,
+            (
+                workflow_result.action_plan.action.value
+                if workflow_result.action_plan is not None
+                else None
+            ),
+            workflow_result.approval_id,
         )
-
-        print(
-            f"[Pipeline] Workflow status: "
-            f"{workflow_result.workflow_status}"
-        )
-
-        if workflow_result.action_plan is not None:
-            print(
-                f"[Pipeline] Action: "
-                f"{workflow_result.action_plan.action}"
-            )
-
-            print(
-                f"[Pipeline] Risk level: "
-                f"{workflow_result.action_plan.risk_level}"
-            )
-
-            print(
-                f"[Pipeline] Requires approval: "
-                f"{workflow_result.action_plan.requires_approval}"
-            )
-
-        if workflow_result.approval_id is not None:
-            print(
-                f"[Pipeline] Approval ID: "
-                f"{workflow_result.approval_id}"
-            )
-
-        if workflow_result.execution_result is not None:
-            print(
-                f"[Pipeline] Execution result: "
-                f"{workflow_result.execution_result}"
-            )
 
         if workflow_result.error is not None:
-            print(
-                f"[Pipeline] Workflow error: "
-                f"{workflow_result.error}"
+            logger.warning(
+                "Email %d workflow error: %s",
+                email_id,
+                workflow_result.error,
             )
 
         return workflow_result

@@ -7,6 +7,11 @@ from typing import Any
 from bs4 import BeautifulSoup
 
 
+# Maximum email body length after cleaning.
+# Prevents oversized inputs to the LLM.
+MAX_BODY_LENGTH = 50_000
+
+
 def decode_body(data: str | None) -> str:
     """
     Decode a Gmail base64url-encoded message body.
@@ -270,6 +275,10 @@ def parse_gmail_message(
     body = extract_body(
         payload
     )
+
+    # Truncate to prevent oversized LLM inputs.
+    if len(body) > MAX_BODY_LENGTH:
+        body = body[:MAX_BODY_LENGTH]
 
     # Gmail's internalDate is milliseconds
     # since Unix epoch.
