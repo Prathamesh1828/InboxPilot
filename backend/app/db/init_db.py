@@ -9,7 +9,9 @@ from app.models.audit_event import AuditEvent
 
 
 def init_db():
-    Base.metadata.create_all(bind=engine)
+    # Database initialization is now managed by Alembic.
+    # See `alembic upgrade head`
+    pass
 
 
 if __name__ == "__main__":

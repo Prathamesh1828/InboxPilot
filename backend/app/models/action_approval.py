@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String
+from sqlalchemy import DateTime, ForeignKey, Integer, JSON, String, Index, text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
@@ -8,6 +8,16 @@ from app.db.base import Base
 
 class ActionApproval(Base):
     __tablename__ = "action_approvals"
+    
+    __table_args__ = (
+        Index(
+            "ix_action_approvals_unique_pending",
+            "email_id",
+            unique=True,
+            postgresql_where=text("status = 'PENDING'"),
+            sqlite_where=text("status = 'PENDING'")
+        ),
+    )
 
     id: Mapped[int] = mapped_column(
         Integer,
