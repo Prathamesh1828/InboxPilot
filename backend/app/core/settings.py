@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     # ============================================================
 
     database_url: str
+    redis_url: str = "redis://localhost:6379/0"
 
     # ============================================================
     # Google OAuth
@@ -85,12 +86,18 @@ class Settings(BaseSettings):
 
     def validate_secrets(self) -> None:
         if self.environment == "production":
-            if self.api_key == "dev-secret-key":
-                raise ValueError("API_KEY must be changed in production")
+            if self.debug:
+                raise ValueError("DEBUG must be False in production")
+            if self.api_key == "dev-secret-key" or not self.api_key:
+                raise ValueError("API_KEY must be changed and set in production")
             if not self.llm_api_key:
                 raise ValueError("LLM_API_KEY must be set in production")
             if not self.session_secret or self.session_secret == "changeme":
                 raise ValueError("SESSION_SECRET must be set in production")
+            if not self.google_client_id or not self.google_client_secret:
+                raise ValueError("Google OAuth credentials must be set in production")
+            if not self.telegram_webhook_secret:
+                raise ValueError("TELEGRAM_WEBHOOK_SECRET must be set in production")
 
 
 settings = Settings()

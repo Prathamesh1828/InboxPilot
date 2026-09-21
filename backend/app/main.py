@@ -50,7 +50,7 @@ app.add_middleware(
     SessionMiddleware,
     secret_key=settings.session_secret,
     same_site="lax",
-    https_only=False, 
+    https_only=(settings.environment == "production"), 
 )
 
 
