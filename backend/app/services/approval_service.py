@@ -4,6 +4,7 @@ from app.repositories.action_approval_repository import (
     get_action_approval,
     update_action_approval_status,
 )
+from app.repositories.audit_repository import log_audit_event
 
 
 class ApprovalService:
@@ -43,6 +44,14 @@ class ApprovalService:
             raise ValueError(
                 f"Failed to approve action {approval_id}."
             )
+            
+        log_audit_event(
+            db=db,
+            email_id=approval.email_id,
+            approval_id=approval_id,
+            event_type="APPROVAL_APPROVED",
+            action=approval.action,
+        )
 
         return (
             f"Approval {approval_id} approved successfully."
@@ -79,6 +88,14 @@ class ApprovalService:
             raise ValueError(
                 f"Failed to reject action {approval_id}."
             )
+
+        log_audit_event(
+            db=db,
+            email_id=approval.email_id,
+            approval_id=approval_id,
+            event_type="APPROVAL_REJECTED",
+            action=approval.action,
+        )
 
         return (
             f"Approval {approval_id} rejected successfully."

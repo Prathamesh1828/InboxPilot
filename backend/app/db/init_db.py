@@ -5,6 +5,7 @@ from app.models.google_account import GoogleAccount
 from app.models.bill import Bill
 from app.models.action_approval import ActionApproval
 from app.models.telegram_connection import TelegramConnection
+from app.models.audit_event import AuditEvent
 
 
 def init_db():

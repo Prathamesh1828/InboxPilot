@@ -29,6 +29,7 @@ def main() -> None:
         ),
     )
 
+    # pyrefly: ignore [missing-argument]
     result = grounding_node(state)
 
     print()

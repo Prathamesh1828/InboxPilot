@@ -356,6 +356,7 @@ def _datetime_is_grounded(
         if reference_time is not None:
             relative_dates = {
                 "today": reference_time.date(),
+                "tonight": reference_time.date(),
                 "tomorrow": (
                     reference_time + timedelta(days=1)
                 ).date(),
@@ -426,6 +427,7 @@ def _datetime_is_grounded(
 
         if day_keyword.lower() in {
             "today",
+            "tonight",
             "tomorrow",
         }:
             if re.fullmatch(
@@ -529,7 +531,7 @@ def _reply_is_grounded(
 
     match_ratio = len(matched_words) / len(reply_words)
 
-    return match_ratio >= 0.3
+    return match_ratio >= 0.15
 
 
 # =====================================================
@@ -610,6 +612,7 @@ def _date_is_grounded(
     if reference_time is not None:
         relative_dates = {
             "today": reference_time.date(),
+            "tonight": reference_time.date(),
             "tomorrow": (reference_time + timedelta(days=1)).date(),
         }
         for keyword, expected_date in relative_dates.items():
@@ -628,6 +631,12 @@ def _date_is_grounded(
         f"{month_short} {day}, {year}",
         f"{day} {month_name} {year}",
         f"{day} {month_short} {year}",
+        f"{month_name} {day}",
+        f"{month_short} {day}",
+        f"{month_name} {day}st",
+        f"{month_name} {day}nd",
+        f"{month_name} {day}rd",
+        f"{month_name} {day}th",
     ]
 
     return any(

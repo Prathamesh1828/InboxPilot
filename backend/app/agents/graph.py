@@ -25,9 +25,27 @@ def build_planning_graph(db: Session):
 
     graph = StateGraph(InboxPilotState)
 
-    graph.add_node("plan", planning_node)
-    graph.add_node("grounding", grounding_node)
-    graph.add_node("safety", safety_node)
+    graph.add_node(
+        "plan",
+        lambda state: planning_node(
+            state=state,
+            db=db,
+        ),
+    )
+    graph.add_node(
+        "grounding",
+        lambda state: grounding_node(
+            state=state,
+            db=db,
+        ),
+    )
+    graph.add_node(
+        "safety",
+        lambda state: safety_node(
+            state=state,
+            db=db,
+        ),
+    )
 
     # Inject the database session into the execution node.
     graph.add_node(

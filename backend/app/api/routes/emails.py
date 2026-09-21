@@ -8,6 +8,8 @@ from app.services.email_service import (
     get_email,
     ingest_email,
 )
+from app.repositories.audit_repository import get_email_audit_events
+from app.schemas.audit import AuditEventResponse
 from app.workers.tasks import process_email_pipeline
 
 
@@ -63,6 +65,39 @@ def read_email(
         )
 
     return email
+
+
+# ---------------------------------------------------------
+# GET EMAIL AUDIT TRAIL
+# ---------------------------------------------------------
+
+@router.get(
+    "/{email_id}/audit",
+    response_model=list[AuditEventResponse],
+)
+def read_email_audit_trail(
+    email_id: int,
+    db: Session = Depends(get_db),
+):
+    """
+    Get the chronological audit trail for a single email.
+    """
+
+    email = get_email(
+        db=db,
+        email_id=email_id,
+    )
+
+    if email is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Email not found",
+        )
+
+    return get_email_audit_events(
+        db=db,
+        email_id=email_id,
+    )
 
 
 # ---------------------------------------------------------

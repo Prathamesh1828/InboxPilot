@@ -9,10 +9,12 @@ from app.services.action_safety import evaluate_action_safety
 from app.services.executor import ActionExecutor
 from app.services.parameter_grounding import validate_action_parameters
 from app.services.planner import EmailPlanner
+from app.repositories.audit_repository import log_audit_event
 
 
 def planning_node(
     state: InboxPilotState,
+    db: Session,
 ) -> dict:
     """
     Create an action plan for the classified email.
@@ -33,6 +35,19 @@ def planning_node(
         subject=state.subject,
         body=state.body,
     )
+    
+    log_audit_event(
+        db=db,
+        # pyrefly: ignore [bad-argument-type]
+        email_id=state.email_id,
+        event_type="PLAN_CREATED",
+        action=action_plan.action.value,
+        details={
+            "risk_level": action_plan.risk_level.value,
+            "requires_approval": action_plan.requires_approval,
+            "parameters": action_plan.parameters,
+        }
+    )
 
     return {
         "action_plan": action_plan,
@@ -42,6 +57,7 @@ def planning_node(
 
 def grounding_node(
     state: InboxPilotState,
+    db: Session,
 ) -> dict:
     """
     Validate that important action parameters
@@ -63,10 +79,26 @@ def grounding_node(
     )
 
     if errors:
+        log_audit_event(
+            db=db,
+            # pyrefly: ignore [bad-argument-type]
+            email_id=state.email_id,
+            event_type="GROUNDING_FAILED",
+            action=action_plan.action.value,
+            details={"grounding_errors": errors},
+        )
         return {
             "grounding_errors": errors,
             "workflow_status": "GROUNDING_FAILED",
         }
+
+    log_audit_event(
+        db=db,
+        # pyrefly: ignore [bad-argument-type]
+        email_id=state.email_id,
+        event_type="GROUNDING_PASSED",
+        action=action_plan.action.value,
+    )
 
     return {
         "grounding_errors": [],
@@ -90,6 +122,7 @@ def route_after_grounding(
 
 def safety_node(
     state: InboxPilotState,
+    db: Session,
 ) -> dict:
     """
     Apply the deterministic safety policy
@@ -104,6 +137,18 @@ def safety_node(
         )
 
     safe_plan = evaluate_action_safety(action_plan)
+    
+    log_audit_event(
+        db=db,
+        # pyrefly: ignore [bad-argument-type]
+        email_id=state.email_id,
+        event_type="SAFETY_EVALUATED",
+        action=safe_plan.action.value,
+        details={
+            "risk_level": safe_plan.risk_level.value,
+            "requires_approval": safe_plan.requires_approval,
+        },
+    )
 
     return {
         "action_plan": safe_plan,
@@ -154,16 +199,41 @@ def execute_node(
 
     executor = ActionExecutor()
 
-    result = executor.execute(
-        plan=action_plan,
+    log_audit_event(
         db=db,
         email_id=state.email_id,
+        event_type="EXECUTION_STARTED",
+        action=action_plan.action.value,
     )
 
-    return {
-        "workflow_status": "EXECUTED",
-        "execution_result": result,
-    }
+    try:
+        result = executor.execute(
+            plan=action_plan,
+            db=db,
+            email_id=state.email_id,
+        )
+        
+        log_audit_event(
+            db=db,
+            email_id=state.email_id,
+            event_type="EXECUTION_COMPLETED",
+            action=action_plan.action.value,
+            details={"execution_result": result},
+        )
+        
+        return {
+            "workflow_status": "EXECUTED",
+            "execution_result": result,
+        }
+    except Exception as exc:
+        log_audit_event(
+            db=db,
+            email_id=state.email_id,
+            event_type="EXECUTION_FAILED",
+            action=action_plan.action.value,
+            details={"error": str(exc)},
+        )
+        raise
 
 
 def approval_node(
@@ -203,6 +273,14 @@ def approval_node(
         email_id=state.email_id,
         action=action_plan.action.value,
         action_plan=action_plan.model_dump(mode="json"),
+    )
+    
+    log_audit_event(
+        db=db,
+        email_id=state.email_id,
+        approval_id=approval.id,
+        event_type="APPROVAL_CREATED",
+        action=action_plan.action.value,
     )
 
     from app.integrations.telegram.bot import send_approval_notification

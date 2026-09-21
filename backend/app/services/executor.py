@@ -25,29 +25,12 @@ from app.schemas.action_plan import (
     DraftReplyActionPlan,
     ReminderActionPlan,
 )
-from app.services.datetime_parser import parse_calendar_datetime
+from app.services.datetime_parser import parse_calendar_datetime, parse_relative_date
 
 
-_DATE_FORMATS = (
-    "%Y-%m-%d",
-    "%B %d, %Y",
-    "%b %d, %Y",
-    "%d %B %Y",
-    "%d %b %Y",
-)
-
-
-def _parse_date(value: str) -> date:
-    """Parse a date string using several common formats."""
-    for fmt in _DATE_FORMATS:
-        try:
-            return datetime.strptime(value, fmt).date()
-        except ValueError:
-            continue
-
-    raise ValueError(
-        f"Unrecognised date format: {value}"
-    )
+def _parse_date(value: str, reference_time: datetime) -> date:
+    """Parse a date string using the new datetime_parser."""
+    return parse_relative_date(value, reference_time)
 
 
 class ActionExecutor:
@@ -147,7 +130,10 @@ class ActionExecutor:
 
         if due_date is not None:
             try:
-                parsed_due_date = _parse_date(due_date)
+                email_record = get_email_by_id(db, email_id)
+                reference_time = email_record.received_at if email_record else None
+                # pyrefly: ignore [bad-argument-type]
+                parsed_due_date = _parse_date(due_date, reference_time=reference_time)
             except ValueError as exc:
                 raise ValueError(
                     f"Invalid bill due date: {due_date}"
@@ -202,8 +188,12 @@ class ActionExecutor:
             )
 
         try:
+            email_record = get_email_by_id(db, email_id)
+            reference_time = email_record.received_at if email_record else None
             parsed_reminder_date = _parse_date(
-                reminder_date
+                reminder_date,
+                # pyrefly: ignore [bad-argument-type]
+                reference_time=reference_time,
             )
         except ValueError as exc:
             raise ValueError(

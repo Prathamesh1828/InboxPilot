@@ -11,6 +11,7 @@ from app.schemas.classification import (
     EmailCategory,
     EmailClassification,
 )
+from app.repositories.audit_repository import log_audit_event
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,13 @@ class EmailPipeline:
         # ---------------------------------------------------------
 
         if email.status == "PENDING":
+            log_audit_event(
+                db=db,
+                email_id=email_id,
+                event_type="EMAIL_RECEIVED",
+                status="PENDING",
+            )
+            
             logger.info(
                 "Classifying email %d",
                 email_id,
@@ -88,6 +96,18 @@ class EmailPipeline:
                 email.category,
                 email.classification_confidence or 0.0,
                 email.status,
+            )
+            
+            log_audit_event(
+                db=db,
+                email_id=email_id,
+                event_type="CLASSIFICATION_COMPLETED",
+                status=email.status,
+                details={
+                    "category": email.category,
+                    "confidence": email.classification_confidence,
+                    "reasoning": email.classification_reasoning,
+                },
             )
 
         elif email.status == "CLASSIFIED":
@@ -156,6 +176,23 @@ class EmailPipeline:
                 else None
             ),
             workflow_result.approval_id,
+        )
+
+        log_audit_event(
+            db=db,
+            email_id=email_id,
+            event_type="WORKFLOW_COMPLETED",
+            status=workflow_result.workflow_status,
+            action=(
+                workflow_result.action_plan.action.value
+                if workflow_result.action_plan is not None
+                else None
+            ),
+            approval_id=workflow_result.approval_id,
+            details={
+                "error": workflow_result.error,
+                "execution_result": workflow_result.execution_result,
+            }
         )
 
         if workflow_result.error is not None:

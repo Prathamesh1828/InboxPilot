@@ -48,16 +48,18 @@ def process_email(
 
         if email is None:
             logger.error(
-                "process_email: email %d not found", email_id
+                "process_email: email not found",
+                extra={"email_id": email_id},
             )
             return {"email_id": email_id, "error": "not_found"}
 
         if email.status in _TERMINAL_STATUSES:
             logger.info(
-                "process_email: skipping email %d "
-                "(status=%s)",
-                email_id,
-                email.status,
+                "process_email: skipping email (terminal status)",
+                extra={
+                    "email_id": email_id,
+                    "workflow_status": email.status,
+                },
             )
             return {
                 "email_id": email_id,
@@ -73,9 +75,13 @@ def process_email(
         )
 
         logger.info(
-            "process_email completed for email %d: %s",
-            email_id,
-            result.workflow_status,
+            "process_email: completed",
+            extra={
+                "email_id": email_id,
+                "workflow_status": result.workflow_status,
+                "approval_id": result.approval_id,
+                "error": result.error,
+            },
         )
 
         return {
@@ -88,9 +94,12 @@ def process_email(
 
     except Exception as exc:
         logger.error(
-            "process_email failed for email %d: %s",
-            email_id,
-            exc,
+            "process_email: failed with exception",
+            exc_info=True,
+            extra={
+                "email_id": email_id,
+                "error": str(exc),
+            },
         )
 
         raise self.retry(
@@ -133,17 +142,18 @@ def process_email_pipeline(
 
         if email is None:
             logger.error(
-                "process_email_pipeline: email %d not found",
-                email_id,
+                "process_email_pipeline: email not found",
+                extra={"email_id": email_id},
             )
             return {"email_id": email_id, "error": "not_found"}
 
         if email.status in _TERMINAL_STATUSES:
             logger.info(
-                "process_email_pipeline: skipping email %d "
-                "(status=%s)",
-                email_id,
-                email.status,
+                "process_email_pipeline: skipping email (terminal status)",
+                extra={
+                    "email_id": email_id,
+                    "workflow_status": email.status,
+                },
             )
             return {
                 "email_id": email_id,
@@ -152,8 +162,8 @@ def process_email_pipeline(
             }
 
         logger.info(
-            "Starting email pipeline for email %d",
-            email_id,
+            "process_email_pipeline: started",
+            extra={"email_id": email_id},
         )
 
         pipeline = EmailPipeline()
@@ -164,9 +174,12 @@ def process_email_pipeline(
         )
 
         logger.info(
-            "Email %d pipeline completed: %s",
-            email_id,
-            result.workflow_status,
+            "process_email_pipeline: completed",
+            extra={
+                "email_id": email_id,
+                "workflow_status": result.workflow_status,
+                "error": result.error,
+            },
         )
 
         return {
@@ -204,9 +217,12 @@ def process_email_pipeline(
 
     except Exception as exc:
         logger.error(
-            "process_email_pipeline failed for email %d: %s",
-            email_id,
-            exc,
+            "process_email_pipeline: failed with exception",
+            exc_info=True,
+            extra={
+                "email_id": email_id,
+                "error": str(exc),
+            },
         )
 
         raise self.retry(
