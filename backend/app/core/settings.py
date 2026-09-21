@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     app_name: str
     environment: str
     debug: bool
+    frontend_url: str = "http://localhost:3000"
+    api_key: str = "dev-secret-key"
 
     # ============================================================
     # Database
@@ -68,6 +70,7 @@ class Settings(BaseSettings):
 
     telegram_bot_token: str = ""
     telegram_bot_username: str = ""
+    telegram_webhook_secret: str = ""
 
     # ============================================================
     # Pydantic Settings Configuration
@@ -80,8 +83,18 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
+    def validate_secrets(self) -> None:
+        if self.environment == "production":
+            if self.api_key == "dev-secret-key":
+                raise ValueError("API_KEY must be changed in production")
+            if not self.llm_api_key:
+                raise ValueError("LLM_API_KEY must be set in production")
+            if not self.session_secret or self.session_secret == "changeme":
+                raise ValueError("SESSION_SECRET must be set in production")
+
 
 settings = Settings()
+settings.validate_secrets()
 
 
 # OAuthlib needs this as an actual environment variable.

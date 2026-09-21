@@ -8,6 +8,7 @@ from sqlalchemy.orm import sessionmaker
 
 from app.db.base import Base
 from app.api.deps import get_db
+from app.core.settings import settings
 from app.main import app
 from app.models.audit_event import AuditEvent
 from app.models.email import Email
@@ -116,7 +117,10 @@ def test_api_audit_trail(db, test_email):
         event_type="EVENT_2",
     )
 
-    response = client.get(f"/emails/{test_email.id}/audit")
+    response = client.get(
+        f"/emails/{test_email.id}/audit",
+        headers={"X-API-Key": settings.api_key}
+    )
     app.dependency_overrides.clear()
     
     assert response.status_code == 200

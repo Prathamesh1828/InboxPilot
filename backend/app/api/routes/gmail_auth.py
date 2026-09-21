@@ -6,6 +6,7 @@ from itsdangerous import BadSignature, URLSafeSerializer
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_db
+from app.core.limiter import limiter
 from app.core.settings import settings
 from app.integrations.gmail.oauth import create_google_flow
 from app.repositories.google_account_repository import create_or_update_google_account
@@ -22,6 +23,7 @@ _signer = URLSafeSerializer(settings.session_secret)
 
 
 @router.get("/login")
+@limiter.limit("5/minute")
 def gmail_login(request: Request):
     """
     Start Google OAuth flow.
@@ -66,6 +68,7 @@ def gmail_login(request: Request):
 
 
 @router.get("/callback")
+@limiter.limit("5/minute")
 def gmail_callback(
     request: Request,
     db: Session = Depends(get_db),

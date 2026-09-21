@@ -9,11 +9,13 @@ from app.integrations.telegram.bot import (
     edit_message_text,
     is_telegram_configured,
 )
+from app.repositories.telegram_connection_repository import get_telegram_connection_by_chat_id
 from app.services.approval_execution_service import ApprovalExecutionService
 from app.services.approval_service import ApprovalService
 from app.services.telegram_connection_service import TelegramConnectionService
 from app.integrations.telegram.bot import httpx
 from app.core.settings import settings
+from app.core.limiter import limiter
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +39,7 @@ def _send_text_message(chat_id: str, text: str):
 
 
 @router.post("/webhook")
+@limiter.limit("100/minute")
 async def telegram_webhook(
     request: Request,
     db: Session = Depends(get_db),
@@ -49,6 +52,13 @@ async def telegram_webhook(
     if not is_telegram_configured():
         logger.warning("Received Telegram webhook but Telegram is not configured.")
         return {"status": "ignored"}
+
+    # Verify Telegram Secret Token if configured
+    if settings.telegram_webhook_secret:
+        secret_token = request.headers.get("X-Telegram-Bot-Api-Secret-Token")
+        if secret_token != settings.telegram_webhook_secret:
+            logger.warning("Invalid Telegram webhook secret token.")
+            return {"status": "unauthorized"}
 
     data = await request.json()
 
@@ -95,6 +105,21 @@ async def telegram_webhook(
         return {"status": "ok"}
 
     action, approval_id_str = callback_data.split("_", 1)
+
+    # Security check: Ensure the user clicking the button is the one who owns the chat connection
+    user_id = str(callback_query.get("from", {}).get("id"))
+    connection = get_telegram_connection_by_chat_id(db, chat_id=chat_id)
+    
+    if not connection or connection.telegram_user_id != user_id:
+        logger.warning(
+            "Unauthorized approval attempt. Expected user %s, got %s in chat %s",
+            connection.telegram_user_id if connection else "None",
+            user_id,
+            chat_id
+        )
+        if query_id:
+            answer_callback_query(query_id, "You are not authorized to approve this.", show_alert=True)
+        return {"status": "ok"}
 
     try:
         approval_id = int(approval_id_str)

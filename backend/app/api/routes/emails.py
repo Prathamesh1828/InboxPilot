@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.api.deps import get_db, get_api_key
+from app.core.limiter import limiter
 from app.repositories.email_repository import get_emails
 from app.schemas.email import EmailCreate, EmailResponse
 from app.services.email_service import (
@@ -16,6 +17,7 @@ from app.workers.tasks import process_email_pipeline
 router = APIRouter(
     prefix="/emails",
     tags=["Emails"],
+    dependencies=[Depends(get_api_key)],
 )
 
 
@@ -27,7 +29,9 @@ router = APIRouter(
     "",
     response_model=list[EmailResponse],
 )
+@limiter.limit("60/minute")
 def read_emails(
+    request: Request,
     db: Session = Depends(get_db),
 ):
     """
@@ -45,7 +49,9 @@ def read_emails(
     "/{email_id}",
     response_model=EmailResponse,
 )
+@limiter.limit("60/minute")
 def read_email(
+    request: Request,
     email_id: int,
     db: Session = Depends(get_db),
 ):
@@ -75,7 +81,9 @@ def read_email(
     "/{email_id}/audit",
     response_model=list[AuditEventResponse],
 )
+@limiter.limit("60/minute")
 def read_email_audit_trail(
+    request: Request,
     email_id: int,
     db: Session = Depends(get_db),
 ):
@@ -108,7 +116,9 @@ def read_email_audit_trail(
     "",
     response_model=EmailResponse,
 )
+@limiter.limit("60/minute")
 def create_email(
+    request: Request,
     email_data: EmailCreate,
     db: Session = Depends(get_db),
 ):
@@ -141,7 +151,9 @@ def create_email(
 @router.post(
     "/{email_id}/process",
 )
+@limiter.limit("20/minute")
 def process_email(
+    request: Request,
     email_id: int,
     db: Session = Depends(get_db),
 ):

@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.api.deps import get_db, get_api_key
+from app.core.limiter import limiter
 from app.repositories.action_approval_repository import (
     get_action_approval,
     get_pending_approvals,
@@ -16,6 +17,7 @@ from app.services.approval_service import ApprovalService
 router = APIRouter(
     prefix="/approvals",
     tags=["Approvals"],
+    dependencies=[Depends(get_api_key)],
 )
 
 
@@ -27,7 +29,9 @@ router = APIRouter(
     "",
     response_model=list[ApprovalResponse],
 )
+@limiter.limit("60/minute")
 def read_pending_approvals(
+    request: Request,
     db: Session = Depends(get_db),
 ):
     """
@@ -47,7 +51,9 @@ def read_pending_approvals(
     "/{approval_id}",
     response_model=ApprovalResponse,
 )
+@limiter.limit("60/minute")
 def read_approval(
+    request: Request,
     approval_id: int,
     db: Session = Depends(get_db),
 ):
@@ -76,7 +82,9 @@ def read_approval(
 @router.post(
     "/{approval_id}/approve",
 )
+@limiter.limit("20/minute")
 def approve_action(
+    request: Request,
     approval_id: int,
     db: Session = Depends(get_db),
 ):
@@ -138,7 +146,9 @@ def approve_action(
 @router.post(
     "/{approval_id}/reject",
 )
+@limiter.limit("20/minute")
 def reject_action(
+    request: Request,
     approval_id: int,
     db: Session = Depends(get_db),
 ):
