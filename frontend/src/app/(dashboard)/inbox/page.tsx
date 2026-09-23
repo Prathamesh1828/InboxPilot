@@ -1,64 +1,35 @@
-import { Metadata } from "next";
+"use client";
+
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmailRow, EmailData } from "@/components/inbox/EmailRow";
+import { emailsApi } from "@/lib/api/emails";
 
-export const metadata: Metadata = {
-  title: "Inbox | InboxPilot",
-  description: "Manage your automated inbox.",
-};
+export default function InboxPage() {
+  const [emails, setEmails] = useState<EmailData[]>([]);
+  const [loading, setLoading] = useState(true);
 
-// Mock data
-const mockEmails: EmailData[] = [
-  {
-    id: "1",
-    sender: "Alex from Acme Corp",
-    subject: "Q3 Planning Meeting",
-    preview: "Hi team, let's sync up on the Q3 planning. I was thinking tomorrow at 2 PM.",
-    category: "MEETING",
-    confidence: 98,
-    status: "PROCESSED",
-    timestamp: new Date(Date.now() - 1000 * 60 * 15),
-    isUnread: true,
-  },
-  {
-    id: "2",
-    sender: "AWS Billing",
-    subject: "Your invoice for August 2026",
-    preview: "Your invoice for the period is ready. The total amount is $142.50.",
-    category: "BILL",
-    confidence: 99,
-    status: "PROCESSED",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
-    isUnread: true,
-  },
-  {
-    id: "3",
-    sender: "Jane Smith",
-    subject: "Design Review Notes",
-    preview: "Please review the attached notes from our design review session.",
-    category: "OTHER",
-    confidence: 85,
-    status: "PENDING",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5),
-    isUnread: false,
-  },
-  {
-    id: "4",
-    sender: "Marketing Weekly",
-    subject: "Top 10 SaaS Trends",
-    preview: "Discover the top 10 trends defining the SaaS industry this quarter.",
-    category: "OTHER",
-    confidence: 90,
-    status: "PROCESSED",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
-    isUnread: false,
-  },
-];
-
-export default async function InboxPage() {
-  await new Promise((resolve) => setTimeout(resolve, 800));
+  useEffect(() => {
+    emailsApi.getMany()
+      .then((data: any) => {
+        const mappedEmails: EmailData[] = data.map((email: any) => ({
+          id: String(email.id),
+          sender: email.sender,
+          subject: email.subject || "(No Subject)",
+          preview: email.body ? email.body.substring(0, 100) : "",
+          category: email.category || "OTHER",
+          confidence: Math.round((email.classification_confidence || 0) * 100),
+          status: email.status,
+          timestamp: email.received_at, // will be parsed by EmailRow
+          isUnread: false
+        }));
+        setEmails(mappedEmails);
+        setLoading(false);
+      })
+      .catch(console.error);
+  }, []);
 
   return (
     <div className="space-y-6 h-full flex flex-col max-h-[calc(100vh-4rem)]">
@@ -98,13 +69,17 @@ export default async function InboxPage() {
         </div>
         
         <div className="overflow-y-auto flex-1">
-          {mockEmails.length === 0 ? (
+          {loading ? (
+            <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+              <p>Loading emails...</p>
+            </div>
+          ) : emails.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
               <p className="text-lg font-medium text-foreground">Your inbox is clear.</p>
               <p>All emails have been processed.</p>
             </div>
           ) : (
-            mockEmails.map((email) => (
+            emails.map((email) => (
               <EmailRow key={email.id} email={email} />
             ))
           )}

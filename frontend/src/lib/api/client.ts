@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 class ApiError extends Error {
   status: number;
@@ -26,6 +26,7 @@ async function fetchClient<T>(endpoint: string, options: RequestInit = {}): Prom
   const response = await fetch(url, {
     ...options,
     headers,
+    credentials: "include",
   });
 
   let data;

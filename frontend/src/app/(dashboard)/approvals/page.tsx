@@ -1,51 +1,41 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ApprovalData, ApprovalCard } from "@/components/approvals/ApprovalCard";
-import { CheckSquare } from "lucide-react";
-
-const initialApprovals: ApprovalData[] = [
-  {
-    id: "app_1",
-    emailId: "1",
-    action: "CREATE_CALENDAR_EVENT",
-    reasoning: "The email explicitly suggests a time for a 'sync up' and 'planning', which indicates a meeting.",
-    risk: "MEDIUM",
-    parameters: {
-      title: "Q3 Planning Meeting with Alex",
-      time: "Tomorrow at 2:00 PM",
-      participants: "alex@acme.com",
-    },
-    status: "PENDING",
-    timestamp: new Date(Date.now() - 1000 * 60 * 15),
-  },
-  {
-    id: "app_2",
-    emailId: "5",
-    action: "SEND_DRAFT_REPLY",
-    reasoning: "The client asked for our standard pricing tier info. I have prepared a draft with the standard template.",
-    risk: "MEDIUM",
-    parameters: {
-      to: "client@example.com",
-      subject: "Re: Pricing inquiry",
-      draft: "Hi there,\n\nOur standard pricing starts at $49/mo. Let me know if you need a demo.",
-    },
-    status: "PENDING",
-    timestamp: new Date(Date.now() - 1000 * 60 * 45),
-  },
-];
+import { CheckSquare, Loader2 } from "lucide-react";
+import { approvalsApi } from "@/lib/api/emails";
 
 export default function ApprovalsPage() {
   const [approvals, setApprovals] = useState<ApprovalData[]>([]);
   const [isReady, setIsReady] = useState(false);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setApprovals(initialApprovals);
+  const fetchApprovals = useCallback(async () => {
+    try {
+      const data = await approvalsApi.getPending();
+      
+      // Map the backend ApprovalResponse to the frontend ApprovalData type
+      const mappedApprovals = data.map((item: any) => ({
+        id: String(item.id),
+        emailId: String(item.email_id),
+        action: item.action,
+        reasoning: "Review required for action execution.",
+        risk: "MEDIUM",
+        parameters: item.action_plan,
+        status: item.status,
+        timestamp: new Date(item.created_at)
+      }));
+      
+      setApprovals(mappedApprovals);
+    } catch (error) {
+      console.error("Failed to fetch approvals:", error);
+    } finally {
       setIsReady(true);
-    }, 800);
-    return () => clearTimeout(timer);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchApprovals();
+  }, [fetchApprovals]);
 
   if (!isReady) {
     return (
@@ -64,12 +54,22 @@ export default function ApprovalsPage() {
   }
 
 
-  const handleApprove = (id: string) => {
-    setApprovals(current => current.filter(app => app.id !== id));
+  const handleApprove = async (id: string) => {
+    try {
+      await approvalsApi.approve(id);
+      setApprovals(current => current.filter(app => app.id !== id));
+    } catch (error) {
+      console.error("Approval failed:", error);
+    }
   };
 
-  const handleReject = (id: string) => {
-    setApprovals(current => current.filter(app => app.id !== id));
+  const handleReject = async (id: string) => {
+    try {
+      await approvalsApi.reject(id);
+      setApprovals(current => current.filter(app => app.id !== id));
+    } catch (error) {
+      console.error("Rejection failed:", error);
+    }
   };
 
   return (

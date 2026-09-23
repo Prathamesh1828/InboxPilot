@@ -84,7 +84,7 @@ export function EmailRow({ email }: EmailRowProps) {
       </div>
       
       <div className="shrink-0 text-xs text-muted-foreground w-20 text-right whitespace-nowrap">
-        {formatDistanceToNow(email.timestamp, { addSuffix: true }).replace("about ", "")}
+        {formatDistanceToNow(new Date(email.timestamp), { addSuffix: true }).replace("about ", "")}
       </div>
     </motion.div>
   );

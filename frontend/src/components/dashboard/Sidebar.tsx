@@ -3,13 +3,16 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Inbox, CheckSquare, Activity, Settings, LayoutDashboard, Menu, X, Plug, ChevronLeft, ChevronRight } from "lucide-react";
+import { Inbox, CheckSquare, Activity, Settings, LayoutDashboard, Menu, X, Plug, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
+import { useEffect } from "react";
+import { dashboardApi } from "@/lib/api/emails";
 
-const navItems = [
+const navItemsBase = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
   { name: "Inbox", href: "/inbox", icon: Inbox },
-  { name: "Approvals", href: "/approvals", icon: CheckSquare, badge: 4 },
+  { name: "Approvals", href: "/approvals", icon: CheckSquare, badge: 0 },
   { name: "Audit Logs", href: "/audit", icon: Activity },
   { name: "Integrations", href: "/integrations", icon: Plug },
   { name: "Settings", href: "/settings", icon: Settings },
@@ -23,6 +26,23 @@ interface SidebarProps {
 export function Sidebar({ isCollapsed = false, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const [pendingApprovals, setPendingApprovals] = useState(0);
+
+  // We can fetch stats globally here, or import a specialized hook.
+  // Using a simple fetch effect to get the pending_approvals for the badge.
+
+  useEffect(() => {
+    dashboardApi.getStats()
+      .then(stats => setPendingApprovals(stats.pending_approvals))
+      .catch(console.error);
+  }, []);
+
+  const navItems = navItemsBase.map(item => 
+    item.name === "Approvals" && pendingApprovals > 0
+      ? { ...item, badge: pendingApprovals }
+      : item.name === "Approvals" ? { ...item, badge: undefined } : item
+  );
 
   const sidebarContent = (
     <div className="flex h-full flex-col bg-sidebar border-r border-sidebar-border">
@@ -89,18 +109,35 @@ export function Sidebar({ isCollapsed = false, onToggleCollapse }: SidebarProps)
           </div>
         )}
         
-        <div className={`flex items-center py-2 ${isCollapsed ? "justify-center px-0" : "px-3 gap-3"}`}>
+        <div className={`flex items-center py-2 ${isCollapsed ? "flex-col justify-center px-0" : "px-3 gap-3"}`}>
           <div className="w-8 h-8 rounded-full bg-sidebar-primary/20 flex items-center justify-center text-primary font-bold shrink-0">
-            JD
+            {user?.name?.charAt(0).toUpperCase() || "U"}
           </div>
           {!isCollapsed && (
-            <div className="truncate">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">Jane Doe</p>
+            <div className="flex-1 truncate">
+              <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.name || "User"}</p>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <div className="w-2 h-2 rounded-full bg-green-500 shrink-0" />
+                <div className="w-2 h-2 rounded-full bg-success shrink-0" />
                 <p className="text-xs text-sidebar-foreground/60 truncate">System online</p>
               </div>
             </div>
+          )}
+          {!isCollapsed ? (
+            <button
+              onClick={logout}
+              className="p-1.5 rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              title="Logout"
+            >
+              <LogOut className="h-4 w-4" />
+            </button>
+          ) : (
+            <button
+              onClick={logout}
+              className="p-1.5 mt-2 rounded-lg text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+              title="Logout"
+            >
+              <LogOut className="h-5 w-5" />
+            </button>
           )}
         </div>
       </div>

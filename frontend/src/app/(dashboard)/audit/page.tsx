@@ -1,68 +1,26 @@
-import { Metadata } from "next";
+"use client";
+
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Search, Filter, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-
-export const metadata: Metadata = {
-  title: "Audit Logs | InboxPilot",
-};
-
-interface AuditLog {
-  id: string;
-  emailId: string;
-  event: string;
-  action: string;
-  status: "SUCCESS" | "FAILED" | "PENDING";
-  timestamp: Date;
-}
-
-const mockLogs: AuditLog[] = [
-  {
-    id: "log_1",
-    emailId: "1",
-    event: "ACTION_EXECUTED",
-    action: "CREATE_CALENDAR_EVENT",
-    status: "SUCCESS",
-    timestamp: new Date(Date.now() - 1000 * 60 * 5),
-  },
-  {
-    id: "log_2",
-    emailId: "1",
-    event: "APPROVAL_APPROVED",
-    action: "CREATE_CALENDAR_EVENT",
-    status: "SUCCESS",
-    timestamp: new Date(Date.now() - 1000 * 60 * 6),
-  },
-  {
-    id: "log_3",
-    emailId: "1",
-    event: "APPROVAL_REQUESTED",
-    action: "CREATE_CALENDAR_EVENT",
-    status: "SUCCESS",
-    timestamp: new Date(Date.now() - 1000 * 60 * 10),
-  },
-  {
-    id: "log_4",
-    emailId: "1",
-    event: "AI_CLASSIFIED",
-    action: "CLASSIFY_MEETING",
-    status: "SUCCESS",
-    timestamp: new Date(Date.now() - 1000 * 60 * 15),
-  },
-  {
-    id: "log_5",
-    emailId: "2",
-    event: "ACTION_FAILED",
-    action: "SEND_DRAFT_REPLY",
-    status: "FAILED",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2),
-  },
-];
+import { auditApi } from "@/lib/api/emails";
 
 export default function AuditLogsPage() {
+  const [logs, setLogs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    auditApi.getGlobalAudit(0, 50)
+      .then(data => {
+        setLogs(data);
+        setLoading(false);
+      })
+      .catch(console.error);
+  }, []);
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -98,34 +56,48 @@ export default function AuditLogsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
-              {mockLogs.map((log) => (
-                <tr key={log.id} className="hover:bg-secondary/5 transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      <Activity className="w-4 h-4 text-muted-foreground" />
-                      <span className="font-medium text-foreground">{log.event}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 text-muted-foreground">{log.action}</td>
-                  <td className="px-6 py-4">
-                    <Badge variant="outline" className={
-                      log.status === "SUCCESS" ? "border-green-500/20 text-green-600 bg-green-500/10" :
-                      log.status === "FAILED" ? "border-destructive/20 text-destructive bg-destructive/10" :
-                      "border-yellow-500/20 text-yellow-600 bg-yellow-500/10"
-                    }>
-                      {log.status}
-                    </Badge>
-                  </td>
-                  <td className="px-6 py-4 text-muted-foreground whitespace-nowrap" suppressHydrationWarning>
-                    {formatDistanceToNow(log.timestamp, { addSuffix: true })}
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <Link href={`/inbox/${log.emailId}`} className="text-primary hover:underline font-medium">
-                      View Email
-                    </Link>
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
+                    Loading audit logs...
                   </td>
                 </tr>
-              ))}
+              ) : logs.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
+                    No audit logs found.
+                  </td>
+                </tr>
+              ) : (
+                logs.map((log) => (
+                  <tr key={log.id} className="hover:bg-secondary/5 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <Activity className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-medium text-foreground">{log.event_type}</span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-muted-foreground">{log.action || "-"}</td>
+                    <td className="px-6 py-4">
+                      <Badge variant="outline" className={
+                        log.status === "SUCCESS" ? "border-green-500/20 text-green-600 bg-green-500/10" :
+                        log.status === "FAILED" ? "border-destructive/20 text-destructive bg-destructive/10" :
+                        "border-yellow-500/20 text-yellow-600 bg-yellow-500/10"
+                      }>
+                        {log.status || "INFO"}
+                      </Badge>
+                    </td>
+                    <td className="px-6 py-4 text-muted-foreground whitespace-nowrap" suppressHydrationWarning>
+                      {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <Link href={`/inbox/${log.email_id}`} className="text-primary hover:underline font-medium">
+                        View Email
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

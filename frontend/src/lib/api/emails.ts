@@ -12,5 +12,20 @@ export const emailsApi = {
     apiClient.post<{ status: string }>(`/emails/${id}/process`, {}),
     
   getAudit: (id: string) => 
-    apiClient.get<unknown[]>(`/emails/${id}/audit`),
+    apiClient.get<any[]>(`/emails/${id}/audit`),
+};
+
+export const auditApi = {
+  getGlobalAudit: (skip = 0, limit = 50) =>
+    apiClient.get<any[]>(`/audit?skip=${skip}&limit=${limit}`),
+};
+
+export const dashboardApi = {
+  getStats: () => apiClient.get<any>('/dashboard/stats'),
+};
+
+export const approvalsApi = {
+  getPending: () => apiClient.get<any[]>('/approvals'),
+  approve: (id: string | number) => apiClient.post<any>(`/approvals/${id}/approve`, {}),
+  reject: (id: string | number) => apiClient.post<any>(`/approvals/${id}/reject`, {}),
 };

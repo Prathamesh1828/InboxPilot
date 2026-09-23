@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
 import { SmoothScrolling } from "@/components/SmoothScrolling";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -23,8 +24,10 @@ export default function RootLayout({
     <html lang="en" className={`${outfit.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-sans">
         <SmoothScrolling>
-          <ThemeToggle />
-          {children}
+          <AuthProvider>
+            <ThemeToggle />
+            {children}
+          </AuthProvider>
         </SmoothScrolling>
       </body>
     </html>

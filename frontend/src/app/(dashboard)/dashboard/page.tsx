@@ -1,15 +1,25 @@
-import { Metadata } from "next";
+"use client";
+
+import { useEffect, useState } from "react";
 import { Mail, CheckSquare, Zap, Percent } from "lucide-react";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { ActivityList } from "@/components/dashboard/ActivityList";
+import { Greeting } from "@/components/dashboard/Greeting";
+import { dashboardApi } from "@/lib/api/emails";
 
-export const metadata: Metadata = {
-  title: "Dashboard | InboxPilot",
-  description: "Overview of your autonomous inbox.",
-};
+export default function DashboardPage() {
+  const [stats, setStats] = useState({
+    emails_processed: 0,
+    pending_approvals: 0,
+    actions_executed: 0,
+    automation_rate: 0
+  });
 
-export default async function DashboardPage() {
-  await new Promise((resolve) => setTimeout(resolve, 800));
+  useEffect(() => {
+    dashboardApi.getStats()
+      .then(setStats)
+      .catch(console.error);
+  }, []);
 
   const currentDate = new Date().toLocaleDateString("en-US", {
     weekday: "long",
@@ -22,7 +32,7 @@ export default async function DashboardPage() {
     <div className="space-y-8">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Good morning, Jane</h1>
+        <Greeting />
         <p className="text-muted-foreground mt-1">
           Here&apos;s what&apos;s happening in your inbox. &middot; {currentDate}
         </p>
@@ -32,31 +42,27 @@ export default async function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <KpiCard
           title="Emails Processed"
-          value="1,248"
-          subtitle="In the last 30 days"
+          value={stats.emails_processed.toLocaleString()}
+          subtitle="Total ingested"
           icon={Mail}
-          trend={{ value: "12%", isPositive: true }}
         />
         <KpiCard
           title="Pending Approvals"
-          value="4"
+          value={stats.pending_approvals.toString()}
           subtitle="Requires your attention"
           icon={CheckSquare}
-          trend={{ value: "2", isPositive: false }}
         />
         <KpiCard
           title="Actions Executed"
-          value="342"
-          subtitle="Automated entirely"
+          value={stats.actions_executed.toLocaleString()}
+          subtitle="Processed successfully"
           icon={Zap}
-          trend={{ value: "18%", isPositive: true }}
         />
         <KpiCard
           title="Automation Rate"
-          value="27%"
+          value={`${stats.automation_rate}%`}
           subtitle="Of all incoming email"
           icon={Percent}
-          trend={{ value: "4%", isPositive: true }}
         />
       </div>
 
