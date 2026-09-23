@@ -6,10 +6,10 @@ import { KpiCard } from "@/components/dashboard/KpiCard";
 import { ActivityList } from "@/components/dashboard/ActivityList";
 import { Greeting } from "@/components/dashboard/Greeting";
 import Link from "next/link";
-import { dashboardApi } from "@/lib/api/emails";
+import { dashboardApi, DashboardStats } from "@/lib/api/emails";
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<DashboardStats>({
     emails_processed: 0,
     pending_approvals: 0,
     actions_executed: 0,

@@ -15,7 +15,7 @@ export interface IntegrationsResponse {
 
 export const integrationsApi = {
   getStatus: () => apiClient.get<IntegrationsResponse>("/integrations"),
-  disconnectGmail: () => apiClient.post<{ status: string }>("/integrations/gmail/disconnect"),
-  disconnectTelegram: () => apiClient.post<{ status: string }>("/integrations/telegram/disconnect"),
+  disconnectGmail: () => apiClient.post<{ status: string }>("/integrations/gmail/disconnect", {}),
+  disconnectTelegram: () => apiClient.post<{ status: string }>("/integrations/telegram/disconnect", {}),
   connectTelegram: () => apiClient.get<{ link: string }>("/integrations/telegram/connect"),
 };

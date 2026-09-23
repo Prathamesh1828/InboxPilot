@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Inbox, Mail, Calendar, Smartphone, CheckCircle, ArrowRight, Loader2 } from "lucide-react";

@@ -103,7 +103,7 @@ export default function EmailDetailPage({ params }: { params: Promise<{ id: stri
     metadata: log.details
   }));
 
-  const receivedDate = new Date(email.received_at);
+  const receivedDate = new Date(email.received_at || email.timestamp);
   const relativeTime = !isNaN(receivedDate.getTime()) ? formatDistanceToNow(receivedDate, { addSuffix: true }) : "";
 
   return (
@@ -164,7 +164,7 @@ export default function EmailDetailPage({ params }: { params: Promise<{ id: stri
                       {!isNaN(receivedDate.getTime()) ? (
                         <span title={receivedDate.toLocaleString()}>{relativeTime}</span>
                       ) : (
-                        <span>{email.received_at}</span>
+                        <span>{email.received_at || String(email.timestamp)}</span>
                       )}
                     </div>
                   </div>
@@ -203,7 +203,7 @@ export default function EmailDetailPage({ params }: { params: Promise<{ id: stri
                       </Badge>
                       {email.classification_confidence !== null && (
                         <span className="text-sm font-bold text-purple-500">
-                          {Math.round(email.classification_confidence * 100)}% Match
+                          {Math.round((email.classification_confidence || 0) * 100)}% Match
                         </span>
                       )}
                     </div>
@@ -263,7 +263,7 @@ export default function EmailDetailPage({ params }: { params: Promise<{ id: stri
           )}
 
           {/* SAFETY & APPROVAL / EXECUTION STATUS */}
-          {email.status !== "PENDING" && email.status !== "REVIEW" && (
+          {email.status !== "PENDING" && (
             <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
               
               {/* Approval Bar (if pending) */}

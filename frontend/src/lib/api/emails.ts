@@ -1,6 +1,19 @@
 import { apiClient } from "./client";
 import { EmailData } from "@/components/inbox/EmailRow";
 
+export interface DashboardStats {
+  emails_processed: number;
+  pending_approvals: number;
+  actions_executed: number;
+  automation_rate: number;
+  system_status: {
+    gmail_integration: string;
+    google_calendar: string;
+    telegram: string;
+  };
+  recent_activity: unknown[];
+}
+
 export interface PaginatedEmailResponse {
   items: EmailData[];
   total: number;
@@ -9,6 +22,10 @@ export interface PaginatedEmailResponse {
 }
 
 export interface EmailDetailData extends EmailData {
+  received_at?: string;
+  body?: string;
+  classification_confidence?: number | null;
+  classification_reasoning?: string;
   action_plan?: {
     action: string;
     parameters: Record<string, unknown>;
@@ -67,7 +84,7 @@ export const auditApi = {
 };
 
 export const dashboardApi = {
-  getStats: () => apiClient.get<Record<string, unknown>>('/dashboard/stats'),
+  getStats: () => apiClient.get<DashboardStats>('/dashboard/stats'),
 };
 
 export const approvalsApi = {
