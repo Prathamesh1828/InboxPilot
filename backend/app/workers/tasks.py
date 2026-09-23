@@ -7,6 +7,7 @@ from app.repositories.email_repository import get_email_by_id
 from app.services.email_pipeline import EmailPipeline
 from app.services.workflow_service import WorkflowService
 from app.workers.celery_app import celery_app
+from app.models.google_account import GoogleAccount
 
 logger = logging.getLogger(__name__)
 
@@ -231,5 +232,57 @@ def process_email_pipeline(
             max_retries=3,
         )
 
+    finally:
+        db.close()
+
+
+@celery_app.task(
+    bind=True,
+    base=DatabaseTask,
+    name="app.workers.tasks.ingest_all_gmail",
+)
+def ingest_all_gmail(self: DatabaseTask) -> dict:
+    """
+    Periodic task to ingest emails for all connected Google accounts.
+    """
+    from app.services.email_ingestion import ingest_inbox_emails
+
+    db = SessionLocal()
+    total_fetched = 0
+    total_inserted = 0
+    total_failed = 0
+    accounts_processed = 0
+
+    try:
+        accounts = db.query(GoogleAccount).all()
+        for account in accounts:
+            try:
+                result = ingest_inbox_emails(db=db, account=account, max_results=10)
+                total_fetched += result.get("fetched", 0)
+                total_inserted += result.get("inserted", 0)
+                total_failed += result.get("failed", 0)
+                accounts_processed += 1
+            except Exception as account_exc:
+                logger.error(
+                    "Failed to ingest for account %s: %s",
+                    account.email,
+                    account_exc,
+                    exc_info=True,
+                )
+                
+        logger.info(
+            "ingest_all_gmail completed: processed %d accounts, fetched %d, inserted %d, failed %d",
+            accounts_processed, total_fetched, total_inserted, total_failed
+        )
+        return {
+            "accounts_processed": accounts_processed,
+            "fetched": total_fetched,
+            "inserted": total_inserted,
+            "failed": total_failed,
+        }
+
+    except Exception as exc:
+        logger.error("ingest_all_gmail: failed with exception", exc_info=True)
+        raise self.retry(exc=exc, countdown=60, max_retries=3)
     finally:
         db.close()

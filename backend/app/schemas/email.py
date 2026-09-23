@@ -15,6 +15,7 @@ class EmailCreate(BaseModel):
 
 class EmailResponse(BaseModel):
     id: int
+    user_id: str | None
     provider_message_id: str
     thread_id: str | None
     sender: str
@@ -38,3 +39,28 @@ class EmailResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+
+class PaginatedEmailResponse(BaseModel):
+    items: list[EmailResponse]
+    total: int
+    page: int
+    size: int
+
+
+class EmailDetailResponse(EmailResponse):
+    """Extended email schema with complete AI workflow state"""
+    
+    # Action Plan details (from PLAN_CREATED or SAFETY_EVALUATED audit events)
+    action_plan: dict | None = None
+    
+    # Safety
+    safety_result: dict | None = None
+    
+    # Execution
+    execution_result: dict | None = None
+    error_message: str | None = None
+    
+    # Approval
+    approval_id: int | None = None
+    approval_status: str | None = None

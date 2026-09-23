@@ -49,25 +49,46 @@ def get_pending_approval_by_email_id(
         .first()
     )
 
+from app.models.email import Email
+
 def get_pending_approvals(
     db: Session,
-) -> list[ActionApproval]:
+    user_id: str,
+) -> list[dict]:
     """
-    Return all pending approval requests.
+    Return all pending approval requests for a user.
 
     Newest approval requests are returned first.
+    Includes email subject and sender.
     """
 
-    return (
-        db.query(ActionApproval)
+    results = (
+        db.query(ActionApproval, Email)
+        .join(Email, ActionApproval.email_id == Email.id)
         .filter(
-            ActionApproval.status == "PENDING"
+            ActionApproval.status == "PENDING",
+            Email.user_id == user_id,
         )
         .order_by(
             ActionApproval.created_at.desc()
         )
         .all()
     )
+
+    approvals = []
+    for approval, email in results:
+        approvals.append({
+            "id": approval.id,
+            "email_id": approval.email_id,
+            "email_subject": email.subject,
+            "email_sender": email.sender,
+            "action": approval.action,
+            "action_plan": approval.action_plan,
+            "status": approval.status,
+            "created_at": approval.created_at,
+            "resolved_at": approval.resolved_at,
+        })
+    return approvals
 
 
 def update_action_approval_status(

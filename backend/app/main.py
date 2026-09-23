@@ -7,10 +7,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.core.logging import setup_logging
 from app.core.settings import settings
-from app.api.routes.gmail_auth import router as gmail_auth_router
-from app.api.routes.emails import router as emails_router
-from app.api.routes.approvals import router as approvals_router
-from app.api.routes.telegram import router as telegram_router
+from app.api.routes import auth, emails, approvals, telegram, gmail_auth, audit, dashboard, integrations
 from app.core.limiter import limiter
 
 setup_logging()
@@ -55,10 +52,14 @@ app.add_middleware(
 
 
 # Routers
-app.include_router(gmail_auth_router)
-app.include_router(emails_router)
-app.include_router(approvals_router)
-app.include_router(telegram_router)
+app.include_router(gmail_auth.router)
+app.include_router(emails.router)
+app.include_router(approvals.router)
+app.include_router(audit.router)
+app.include_router(dashboard.router)
+app.include_router(telegram.router)
+app.include_router(auth.router)
+app.include_router(integrations.router)
 
 
 @app.get("/")

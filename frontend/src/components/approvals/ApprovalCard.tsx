@@ -10,6 +10,8 @@ import { formatDistanceToNow } from "date-fns";
 export interface ApprovalData {
   id: string;
   emailId: string;
+  emailSubject: string;
+  emailSender: string;
   action: string;
   reasoning: string;
   risk: "LOW" | "MEDIUM" | "HIGH";
@@ -52,7 +54,11 @@ export function ApprovalCard({ approval, onApprove, onReject }: ApprovalCardProp
             <Calendar className="w-5 h-5 text-primary" />
             <h3 className="font-semibold text-lg text-foreground">{approval.action}</h3>
           </div>
-          <p className="text-sm text-muted-foreground line-clamp-1">{approval.reasoning}</p>
+          <div className="mb-2">
+            <p className="text-sm font-medium text-foreground">{approval.emailSubject}</p>
+            <p className="text-xs text-muted-foreground">From: {approval.emailSender}</p>
+          </div>
+          <p className="text-sm text-muted-foreground line-clamp-2">{approval.reasoning}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Badge variant="outline" className="border-orange-500/20 bg-orange-500/10 text-orange-500">

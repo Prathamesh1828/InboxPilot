@@ -5,23 +5,24 @@ from sqlalchemy.orm import Session
 from app.models.google_account import GoogleAccount
 
 
-def get_google_account_by_email(
+def get_google_account_by_user(
     db: Session,
-    email: str,
+    user_id: str,
 ) -> GoogleAccount | None:
     """
-    Find a Google account by email address.
+    Find a Google account by user ID.
     """
 
     return (
         db.query(GoogleAccount)
-        .filter(GoogleAccount.email == email)
+        .filter(GoogleAccount.user_id == user_id)
         .first()
     )
 
 
 def create_or_update_google_account(
     db: Session,
+    user_id: str,
     email: str,
     google_user_id: str | None,
     access_token: str,
@@ -35,9 +36,9 @@ def create_or_update_google_account(
     provide a new refresh token.
     """
 
-    account = get_google_account_by_email(
+    account = get_google_account_by_user(
         db=db,
-        email=email,
+        user_id=user_id,
     )
 
     if account:
@@ -63,6 +64,7 @@ def create_or_update_google_account(
 
     else:
         account = GoogleAccount(
+            user_id=user_id,
             email=email,
             google_user_id=google_user_id,
             access_token=access_token,
@@ -76,3 +78,14 @@ def create_or_update_google_account(
     db.refresh(account)
 
     return account
+
+def delete_google_account(
+    db: Session,
+    user_id: str,
+) -> bool:
+    account = get_google_account_by_user(db, user_id)
+    if not account:
+        return False
+    db.delete(account)
+    db.commit()
+    return True

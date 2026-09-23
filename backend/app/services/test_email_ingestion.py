@@ -1,6 +1,6 @@
 from app.db.database import SessionLocal
 from app.repositories.google_account_repository import (
-    get_google_account_by_email,
+    get_google_account_by_user,
 )
 from app.services.email_ingestion import ingest_inbox_emails
 
@@ -9,9 +9,8 @@ def main():
     db = SessionLocal()
 
     try:
-        account = get_google_account_by_email(
-            db,
-            "test.sample8400@gmail.com",
+        account = get_google_account_by_user(
+            db, user_id="test-user-id"
         )
 
         if not account:

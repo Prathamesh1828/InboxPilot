@@ -70,3 +70,13 @@ def get_email_audit_events(db: Session, email_id: int) -> list[AuditEvent]:
         .order_by(AuditEvent.created_at.asc())
         .all()
     )
+
+
+def get_all_audit_events(db: Session, skip: int = 0, limit: int = 50) -> list[AuditEvent]:
+    return (
+        db.query(AuditEvent)
+        .order_by(AuditEvent.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )

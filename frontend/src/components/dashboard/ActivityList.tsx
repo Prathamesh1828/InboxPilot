@@ -13,8 +13,9 @@ interface Activity {
   timestamp: Date;
 }
 
-import { useEffect, useState } from "react";
-import { auditApi } from "@/lib/api/emails";
+interface ActivityListProps {
+  activities: any[];
+}
 
 const getIcon = (type: string) => {
   switch (type) {
@@ -27,27 +28,7 @@ const getIcon = (type: string) => {
   }
 };
 
-export function ActivityList() {
-  const [activities, setActivities] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    auditApi.getGlobalAudit(0, 10)
-      .then(data => {
-        setActivities(data);
-        setLoading(false);
-      })
-      .catch(console.error);
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="bg-card border border-border rounded-xl p-8 shadow-sm flex justify-center text-muted-foreground">
-        Loading activity...
-      </div>
-    );
-  }
-
+export function ActivityList({ activities }: ActivityListProps) {
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
       <div className="px-6 py-4 border-b border-border bg-secondary/10 flex justify-between items-center">

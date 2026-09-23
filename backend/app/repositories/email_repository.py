@@ -39,6 +39,7 @@ def create_email(
     subject: str | None,
     body: str,
     received_at: datetime,
+    user_id: str | None = None,
 ) -> Email:
     email = Email(
         provider_message_id=provider_message_id,
@@ -48,6 +49,7 @@ def create_email(
         subject=subject,
         body=body,
         received_at=received_at,
+        user_id=user_id,
     )
 
     db.add(email)
@@ -66,6 +68,7 @@ def create_email_if_not_exists(
     subject: str | None,
     body: str,
     received_at: datetime,
+    user_id: str | None = None,
 ) -> tuple[Email, bool]:
     """
     Create an email if it does not already exist.
@@ -94,6 +97,7 @@ def create_email_if_not_exists(
         subject=subject,
         body=body,
         received_at=received_at,
+        user_id=user_id,
     )
 
     return email, True
@@ -190,3 +194,115 @@ def get_emails(
         .order_by(Email.created_at.desc())
         .all()
     )
+
+
+def get_emails_by_user(
+    db: Session,
+    user_id: str,
+    search: str | None = None,
+    category: str | None = None,
+    status: str | None = None,
+    confidence_min: int | None = None,
+    confidence_max: int | None = None,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    sort_by: str = "received_at",
+    sort_order: str = "desc",
+    page: int = 1,
+    limit: int = 50,
+) -> tuple[list[Email], int]:
+    """
+    Return all emails for a specific user, with filtering, sorting, and pagination.
+    Returns (items, total_count).
+    """
+    from sqlalchemy import or_, desc, asc
+
+    query = db.query(Email).filter(Email.user_id == user_id)
+
+    # 1. Search
+    if search:
+        search_term = f"%{search}%"
+        query = query.filter(
+            or_(
+                Email.sender.ilike(search_term),
+                Email.subject.ilike(search_term),
+                Email.body.ilike(search_term),
+            )
+        )
+
+    # 2. Filters
+    if category:
+        query = query.filter(Email.category == category)
+        
+    if status:
+        query = query.filter(Email.status == status)
+
+    if confidence_min is not None:
+        # Confidence is 0-1 float in DB, we receive 0-100 int
+        query = query.filter(Email.classification_confidence >= (confidence_min / 100.0))
+        
+    if confidence_max is not None:
+        query = query.filter(Email.classification_confidence <= (confidence_max / 100.0))
+
+    if date_from:
+        try:
+            dt_from = datetime.fromisoformat(date_from.replace("Z", "+00:00"))
+            query = query.filter(Email.received_at >= dt_from)
+        except ValueError:
+            pass
+
+    if date_to:
+        try:
+            dt_to = datetime.fromisoformat(date_to.replace("Z", "+00:00"))
+            query = query.filter(Email.received_at <= dt_to)
+        except ValueError:
+            pass
+
+    # 3. Total Count
+    total_count = query.count()
+
+    # 4. Sorting
+    # Valid sort columns to prevent injection
+    valid_sort_columns = {
+        "received_at": Email.received_at,
+        "sender": Email.sender,
+        "category": Email.category,
+        "classification_confidence": Email.classification_confidence,
+        "status": Email.status,
+    }
+
+    sort_col = valid_sort_columns.get(sort_by, Email.received_at)
+    if sort_order.lower() == "asc":
+        query = query.order_by(asc(sort_col))
+    else:
+        query = query.order_by(desc(sort_col))
+
+    # 5. Pagination
+    if page < 1:
+        page = 1
+    if limit < 1 or limit > 100:
+        limit = 50
+
+    items = query.offset((page - 1) * limit).limit(limit).all()
+
+    return items, total_count
+
+
+def get_emails_count_by_user(
+    db: Session,
+    user_id: str,
+) -> int:
+    """
+    Count emails belonging to a user.
+    """
+    from sqlalchemy import func
+    return db.query(func.count(Email.id)).filter(Email.user_id == user_id).scalar() or 0
+
+def delete_emails_by_user(db: Session, user_id: str) -> int:
+    """
+    Delete all emails associated with a user.
+    Returns the number of deleted records.
+    """
+    deleted_count = db.query(Email).filter(Email.user_id == user_id).delete()
+    db.commit()
+    return deleted_count

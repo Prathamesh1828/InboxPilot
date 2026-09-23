@@ -285,21 +285,18 @@ def approval_node(
 
     from app.integrations.telegram.bot import send_approval_notification
     from app.repositories.telegram_connection_repository import get_telegram_connection_by_user_id
-    from app.models.google_account import GoogleAccount
     from app.models.email import Email
     
     try:
-        # In the single-user setup, the user_id corresponds to the first GoogleAccount
-        account = db.query(GoogleAccount).first()
-        if account:
-            connection = get_telegram_connection_by_user_id(db, user_id=int(account.id)) # type: ignore
+        email_record = db.query(Email).get(state.email_id)
+        if email_record and email_record.user_id:
+            connection = get_telegram_connection_by_user_id(db, user_id=email_record.user_id)
             if connection and connection.telegram_chat_id:
-                email_record = db.query(Email).get(state.email_id)
-                gmail_thread_id = email_record.thread_id if email_record else None
-                gmail_message_id = email_record.provider_message_id if email_record else None
+                gmail_thread_id = email_record.thread_id
+                gmail_message_id = email_record.provider_message_id
                 
-                send_approval_notification(
-                    chat_id=str(connection.telegram_chat_id), # type: ignore
+                msg_id = send_approval_notification(
+                    chat_id=str(connection.telegram_chat_id),
                     approval_id=approval.id,
                     action=action_plan.action.value,
                     email_subject=state.subject,
@@ -307,6 +304,9 @@ def approval_node(
                     gmail_thread_id=gmail_thread_id,
                     gmail_message_id=gmail_message_id,
                 )
+                if msg_id:
+                    approval.telegram_message_id = msg_id
+                    db.commit()
     except Exception as telegram_exc:
         import logging
         logging.getLogger(__name__).error(

@@ -5,11 +5,12 @@ from fastapi.responses import RedirectResponse
 from itsdangerous import BadSignature, URLSafeSerializer
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db
+from app.api.deps import get_db, get_current_user
 from app.core.limiter import limiter
 from app.core.settings import settings
 from app.integrations.gmail.oauth import create_google_flow
 from app.repositories.google_account_repository import create_or_update_google_account
+from fastapi import HTTPException
 
 
 router = APIRouter(
@@ -24,7 +25,7 @@ _signer = URLSafeSerializer(settings.session_secret)
 
 @router.get("/login")
 @limiter.limit("5/minute")
-def gmail_login(request: Request):
+def gmail_login(request: Request, intent: str = "connect"):
     """
     Start Google OAuth flow.
 
@@ -44,6 +45,7 @@ def gmail_login(request: Request):
     state_payload = {
         "nonce": secrets.token_urlsafe(16),
         "cv": code_verifier,
+        "intent": intent,
     }
     signed_state = _signer.dumps(state_payload)
 
@@ -120,6 +122,7 @@ def gmail_callback(
     user_info = user_info_resp.json()
 
     email = user_info.get("email")
+    name = user_info.get("name", email)
     google_user_id = user_info.get("id")
 
     if not email:
@@ -128,19 +131,59 @@ def gmail_callback(
     if not credentials or not credentials.token:
         return {"error": "Failed to retrieve access token from Google"}
 
-    # Save credentials securely in the database
-    create_or_update_google_account(
-        db=db,
-        email=email,
-        google_user_id=google_user_id,
-        access_token=credentials.token,
-        refresh_token=credentials.refresh_token,
-        token_expiry=credentials.expiry,
-    )
+    intent = state_payload.get("intent", "connect")
+    
+    if intent == "login":
+        from app.services.auth_service import AuthService
+        from app.core.security import create_access_token
+        from app.api.routes.auth import ACCESS_TOKEN_EXPIRE_MINUTES
+        from datetime import timedelta
+        
+        auth_service = AuthService(db)
+        
+        # This will raise 401 if user is password-only
+        user = auth_service.oauth_login(email=email, name=name)
+        
+        # Create session
+        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token = create_access_token(
+            subject=user.id, expires_delta=access_token_expires
+        )
+        
+        # Redirect to frontend dashboard
+        response = RedirectResponse(url=f"{settings.frontend_url}/dashboard", status_code=302)
+        response.set_cookie(
+            key="session",
+            value=access_token,
+            httponly=True,
+            secure=settings.environment == "production",
+            samesite="lax",
+            max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        )
+        return response
 
-    print(f"Successfully connected Google account for {email}")
+    else:
+        # Require authenticated user to connect an account
+        try:
+            user = get_current_user(request=request, db=db)
+        except HTTPException:
+            return {"error": "You must be logged in to connect a Google account."}
 
-    return {
-        "message": "Google account connected",
-        "email": email,
-    }
+        # Save credentials securely in the database
+        create_or_update_google_account(
+            db=db,
+            user_id=user.id,
+            email=email,
+            google_user_id=google_user_id,
+            access_token=credentials.token,
+            refresh_token=credentials.refresh_token,
+            token_expiry=credentials.expiry,
+        )
+
+        print(f"Successfully connected Google account for {email} to user {user.id}")
+
+        # Trigger an immediate background ingestion of their inbox
+        from app.workers.tasks import ingest_all_gmail
+        ingest_all_gmail.delay()
+
+        return RedirectResponse(url=f"{settings.frontend_url}/integrations", status_code=302)

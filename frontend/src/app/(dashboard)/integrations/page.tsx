@@ -30,6 +30,18 @@ export default function IntegrationsPage() {
     fetchIntegrations();
   }, []);
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (integrations?.telegram?.status === "CONNECTING") {
+      interval = setInterval(() => {
+        fetchIntegrations();
+      }, 3000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [integrations?.telegram?.status]);
+
   const handleConnectGmail = () => {
     setIsConnectingGmail(true);
     // Redirect to the backend OAuth initialization endpoint with intent=connect

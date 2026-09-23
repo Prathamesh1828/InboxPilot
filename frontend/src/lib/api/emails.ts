@@ -1,31 +1,77 @@
 import { apiClient } from "./client";
 import { EmailData } from "@/components/inbox/EmailRow";
 
+export interface PaginatedEmailResponse {
+  items: EmailData[];
+  total: number;
+  page: number;
+  size: number;
+}
+
+export interface EmailDetailData extends EmailData {
+  action_plan?: {
+    action: string;
+    parameters: Record<string, unknown>;
+    risk_level?: string;
+    requires_approval?: boolean;
+  };
+  safety_result?: {
+    action: string;
+    risk_level: string;
+    requires_approval: boolean;
+  };
+  execution_result?: Record<string, unknown>;
+  error_message?: string;
+  approval_id?: number;
+  approval_status?: string;
+}
+
+export interface EmailQueryParams {
+  search?: string;
+  category?: string;
+  status?: string;
+  confidence_min?: number;
+  confidence_max?: number;
+  date_from?: string;
+  date_to?: string;
+  sort_by?: string;
+  sort_order?: "asc" | "desc";
+  page?: number;
+  limit?: number;
+}
+
 export const emailsApi = {
-  getMany: (skip = 0, limit = 50) => 
-    apiClient.get<EmailData[]>(`/emails?skip=${skip}&limit=${limit}`),
-    
+  getMany: (params: EmailQueryParams = {}) => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        searchParams.append(key, String(value));
+      }
+    });
+    const qs = searchParams.toString();
+    return apiClient.get<PaginatedEmailResponse>(`/emails${qs ? `?${qs}` : ""}`);
+  },
   getOne: (id: string) => 
-    apiClient.get<EmailData>(`/emails/${id}`),
+    apiClient.get<EmailDetailData>(`/emails/${id}`),
     
   process: (id: string) => 
     apiClient.post<{ status: string }>(`/emails/${id}/process`, {}),
     
   getAudit: (id: string) => 
-    apiClient.get<any[]>(`/emails/${id}/audit`),
+    apiClient.get<Record<string, unknown>[]>(`/emails/${id}/audit`),
 };
 
 export const auditApi = {
   getGlobalAudit: (skip = 0, limit = 50) =>
-    apiClient.get<any[]>(`/audit?skip=${skip}&limit=${limit}`),
+    apiClient.get<Record<string, unknown>[]>(`/audit?skip=${skip}&limit=${limit}`),
 };
 
 export const dashboardApi = {
-  getStats: () => apiClient.get<any>('/dashboard/stats'),
+  getStats: () => apiClient.get<Record<string, unknown>>('/dashboard/stats'),
 };
 
 export const approvalsApi = {
-  getPending: () => apiClient.get<any[]>('/approvals'),
-  approve: (id: string | number) => apiClient.post<any>(`/approvals/${id}/approve`, {}),
-  reject: (id: string | number) => apiClient.post<any>(`/approvals/${id}/reject`, {}),
+  getPending: () => apiClient.get<Record<string, unknown>[]>('/approvals'),
+  approve: (id: string | number) => apiClient.post<Record<string, unknown>>(`/approvals/${id}/approve`, {}),
+  reject: (id: string | number) => apiClient.post<Record<string, unknown>>(`/approvals/${id}/reject`, {}),
 };

@@ -58,3 +58,8 @@ class ActionApproval(Base):
         DateTime(timezone=True),
         nullable=True,
     )
+
+    telegram_message_id: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
+    )

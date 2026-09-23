@@ -17,7 +17,7 @@ class TelegramConnectionService:
     @staticmethod
     def generate_connection_link(
         db: Session,
-        user_id: int,
+        user_id: str,
     ) -> str:
         """
         Generate a secure, single-use, expiring connection token for a user.

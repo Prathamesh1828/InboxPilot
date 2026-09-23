@@ -2,7 +2,8 @@ from typing import Any
 
 from app.db.database import SessionLocal
 from app.repositories.google_account_repository import (
-    get_google_account_by_email,
+    create_or_update_google_account,
+    get_google_account_by_user,
 )
 from app.integrations.gmail.client import get_gmail_service
 
@@ -12,9 +13,8 @@ def main():
 
     try:
         # Get the Google account saved during OAuth
-        account = get_google_account_by_email(
-            db,
-            "test.sample8400@gmail.com",
+        account = get_google_account_by_user(
+            db=db, user_id="test-user-id"
         )
 
         if not account:

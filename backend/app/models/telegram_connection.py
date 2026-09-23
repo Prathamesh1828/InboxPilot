@@ -12,8 +12,8 @@ class TelegramConnection(Base):
     id = Column(Integer, primary_key=True, index=True)
 
     user_id = Column(
-        Integer,
-        ForeignKey("google_accounts.id"),
+        String,
+        ForeignKey("users.id", ondelete="CASCADE"),
         unique=True,
         nullable=False,
         index=True,

@@ -5,7 +5,7 @@ from app.models.telegram_connection import TelegramConnection
 
 def get_telegram_connection_by_user_id(
     db: Session,
-    user_id: int,
+    user_id: str,
 ) -> TelegramConnection | None:
     return (
         db.query(TelegramConnection)
@@ -38,7 +38,7 @@ def get_telegram_connection_by_chat_id(
 
 def create_telegram_connection(
     db: Session,
-    user_id: int,
+    user_id: str,
     connection_token: str,
     token_expires_at,
 ) -> TelegramConnection:
@@ -69,3 +69,14 @@ def delete_telegram_connection(
 ) -> None:
     db.delete(connection)
     db.commit()
+
+def delete_telegram_connection_by_user(
+    db: Session,
+    user_id: str,
+) -> bool:
+    connection = get_telegram_connection_by_user_id(db, user_id)
+    if not connection:
+        return False
+    db.delete(connection)
+    db.commit()
+    return True

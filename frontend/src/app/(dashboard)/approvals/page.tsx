@@ -17,10 +17,12 @@ export default function ApprovalsPage() {
       const mappedApprovals = data.map((item: any) => ({
         id: String(item.id),
         emailId: String(item.email_id),
+        emailSubject: item.email_subject || "No Subject",
+        emailSender: item.email_sender || "Unknown Sender",
         action: item.action,
-        reasoning: "Review required for action execution.",
-        risk: "MEDIUM",
-        parameters: item.action_plan,
+        reasoning: item.action_plan?.reasoning || "Review required for action execution.",
+        risk: item.action_plan?.risk_level || "MEDIUM",
+        parameters: item.action_plan?.parameters || {},
         status: item.status,
         timestamp: new Date(item.created_at)
       }));

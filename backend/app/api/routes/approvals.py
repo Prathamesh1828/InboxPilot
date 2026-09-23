@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 
-from app.api.deps import get_db, get_api_key
+from app.api.deps import get_db, get_current_user
 from app.core.limiter import limiter
 from app.repositories.action_approval_repository import (
     get_action_approval,
@@ -17,13 +17,42 @@ from app.services.approval_service import ApprovalService
 router = APIRouter(
     prefix="/approvals",
     tags=["Approvals"],
-    dependencies=[Depends(get_api_key)],
+    dependencies=[Depends(get_current_user)],
 )
 
+import html
+import logging
+from app.models.email import Email
+from app.repositories.telegram_connection_repository import get_telegram_connection_by_user_id
+from app.integrations.telegram.bot import edit_message_text
+
+logger = logging.getLogger(__name__)
+
+def _sync_telegram_status(db: Session, approval_id: int, status_text: str):
+    try:
+        approval = get_action_approval(db, approval_id)
+        if approval and approval.telegram_message_id:
+            email_record = db.query(Email).get(approval.email_id)
+            if email_record and email_record.user_id:
+                connection = get_telegram_connection_by_user_id(db, user_id=email_record.user_id)
+                if connection and connection.telegram_chat_id:
+                    subject = email_record.subject or "(No subject)"
+                    escaped_subject = html.escape(subject)
+                    new_text = (
+                        f"🚨 <b>Action Approval Required</b>\n\n"
+                        f"<b>Action:</b> {approval.action}\n"
+                        f"<b>Email:</b> {escaped_subject}\n\n"
+                        f"<b>Status:</b> {status_text}"
+                    )
+                    edit_message_text(str(connection.telegram_chat_id), approval.telegram_message_id, new_text)
+    except Exception as e:
+        logger.error("Failed to sync web approval to telegram: %s", e)
 
 # ---------------------------------------------------------
 # GET PENDING APPROVALS
 # ---------------------------------------------------------
+
+from app.models.user import User
 
 @router.get(
     "",
@@ -33,13 +62,15 @@ router = APIRouter(
 def read_pending_approvals(
     request: Request,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
-    Get all pending human approval requests.
+    Get all pending human approval requests for the current user.
     """
 
     return get_pending_approvals(
         db=db,
+        user_id=current_user.id,
     )
 
 
@@ -124,6 +155,8 @@ def approve_action(
                 approval_id=approval_id,
             )
         )
+        
+        _sync_telegram_status(db, approval_id, "✅ Approved via Web")
 
         return {
             "approval_id": approval_id,
@@ -163,6 +196,8 @@ def reject_action(
             db=db,
             approval_id=approval_id,
         )
+
+        _sync_telegram_status(db, approval_id, "❌ Rejected via Web")
 
         return {
             "approval_id": approval_id,

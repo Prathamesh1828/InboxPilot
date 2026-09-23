@@ -1,4 +1,4 @@
-import { CheckCircle2, Clock, PlayCircle } from "lucide-react";
+import { CheckCircle2, Clock, PlayCircle, ShieldCheck, Mail, BrainCircuit, ListTodo, XCircle, Send } from "lucide-react";
 
 export type StepStatus = "COMPLETED" | "IN_PROGRESS" | "PENDING" | "FAILED";
 
@@ -7,6 +7,8 @@ export interface TimelineStep {
   title: string;
   status: StepStatus;
   description?: string;
+  timestamp?: string;
+  metadata?: Record<string, unknown>;
 }
 
 interface WorkflowTimelineProps {
@@ -14,32 +16,53 @@ interface WorkflowTimelineProps {
 }
 
 export function WorkflowTimeline({ steps }: WorkflowTimelineProps) {
+  
+  const getIcon = (title: string, status: StepStatus) => {
+    if (status === "FAILED") return <XCircle className="w-4 h-4 text-destructive" />;
+    
+    if (title.includes("EMAIL_RECEIVED")) return <Mail className="w-4 h-4 text-muted-foreground" />;
+    if (title.includes("CLASSIFI")) return <BrainCircuit className="w-4 h-4 text-purple-500" />;
+    if (title.includes("PLAN")) return <ListTodo className="w-4 h-4 text-blue-500" />;
+    if (title.includes("SAFETY") || title.includes("GROUNDING")) return <ShieldCheck className="w-4 h-4 text-orange-500" />;
+    if (title.includes("APPROVAL")) return <CheckCircle2 className="w-4 h-4 text-yellow-600" />;
+    if (title.includes("EXECUTION")) return <Send className="w-4 h-4 text-green-500" />;
+    
+    if (status === "COMPLETED") return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+    if (status === "IN_PROGRESS") return <PlayCircle className="w-4 h-4 animate-pulse text-primary" />;
+    return <Clock className="w-4 h-4 text-muted-foreground" />;
+  };
+
+  const formatTitle = (title: string) => {
+    return title.split("_").map(w => w.charAt(0) + w.slice(1).toLowerCase()).join(" ");
+  };
+
   return (
-    <div className="relative space-y-4 before:absolute before:inset-0 before:ml-4 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-border before:to-transparent">
+    <div className="relative space-y-0 before:absolute before:inset-0 before:ml-[1.4rem] before:h-full before:w-0.5 before:bg-border">
       {steps.map((step) => {
         const isCompleted = step.status === "COMPLETED";
-        const isInProgress = step.status === "IN_PROGRESS";
         const isFailed = step.status === "FAILED";
         
         return (
-          <div key={step.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-            <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 bg-background shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm ${
-              isCompleted ? "border-green-500 text-green-500" :
-              isFailed ? "border-destructive text-destructive" :
-              isInProgress ? "border-primary text-primary" :
-              "border-muted-foreground/30 text-muted-foreground/30"
+          <div key={step.id} className="relative flex gap-4 pb-6 group">
+            <div className={`relative flex items-center justify-center w-11 h-11 rounded-full border-2 bg-card shrink-0 z-10 shadow-sm ${
+              isFailed ? "border-destructive/30 bg-destructive/5" :
+              isCompleted ? "border-border" : "border-border border-dashed"
             }`}>
-              {isCompleted ? <CheckCircle2 className="w-4 h-4" /> :
-               isInProgress ? <PlayCircle className="w-4 h-4 animate-pulse" /> :
-               <Clock className="w-4 h-4" />}
+              {getIcon(step.title, step.status)}
             </div>
             
-            <div className="w-[calc(100%-3rem)] md:w-[calc(50%-2rem)] p-4 rounded-xl border border-border bg-card shadow-sm">
-              <div className="flex items-center justify-between mb-1">
-                <h4 className={`font-medium ${isCompleted || isInProgress || isFailed ? "text-foreground" : "text-muted-foreground"}`}>
-                  {step.title}
+            <div className="flex-1 pt-1.5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
+                <h4 className={`text-sm font-semibold ${isFailed ? "text-destructive" : "text-foreground"}`}>
+                  {formatTitle(step.title)}
                 </h4>
+                {step.timestamp && (
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    {new Date(step.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                  </span>
+                )}
               </div>
+              
               {step.description && (
                 <p className="text-sm text-muted-foreground">{step.description}</p>
               )}

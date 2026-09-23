@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, Integer, String, DateTime, Text
+from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey
 
 from app.db.base import Base
 
@@ -9,6 +9,13 @@ class GoogleAccount(Base):
     __tablename__ = "google_accounts"
 
     id = Column(Integer, primary_key=True, index=True)
+
+    user_id = Column(
+        String,
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=True, # temporarily nullable for existing data
+        index=True,
+    )
 
     # Google account information
     email = Column(String(255), unique=True, nullable=False, index=True)

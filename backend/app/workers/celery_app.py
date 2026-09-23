@@ -25,4 +25,12 @@ celery_app.conf.update(
     task_serializer="json",
     result_serializer="json",
     accept_content=["json"],
+
+    # Beat schedule
+    beat_schedule={
+        "ingest-all-gmail-every-5-minutes": {
+            "task": "app.workers.tasks.ingest_all_gmail",
+            "schedule": 300.0,  # 5 minutes in seconds
+        },
+    },
 )

@@ -1,5 +1,7 @@
 import logging
 
+from typing import cast
+
 from sqlalchemy.orm import Session
 
 from app.integrations.gmail.fetcher import fetch_inbox_messages
@@ -49,6 +51,7 @@ def ingest_inbox_emails(
                 subject=parsed_email["subject"],
                 body=parsed_email["body"],
                 received_at=parsed_email["received_at"],
+                user_id=cast(str | None, account.user_id),
             )
 
             if created:

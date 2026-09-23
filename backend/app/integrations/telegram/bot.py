@@ -18,14 +18,14 @@ def send_approval_notification(
     risk_level: str,
     gmail_thread_id: str | None = None,
     gmail_message_id: str | None = None,
-) -> None:
+) -> int | None:
     """
     Send an approval notification to Telegram with inline
     Approve and Reject buttons, and a link to the original email.
     """
     if not is_telegram_configured():
         logger.info("Telegram not configured, skipping notification for approval %d", approval_id)
-        return
+        return None
 
     import html
     
@@ -70,8 +70,11 @@ def send_approval_notification(
         response = httpx.post(url, json=payload, timeout=10.0)
         response.raise_for_status()
         logger.info("Sent Telegram notification for approval %d", approval_id)
+        data = response.json()
+        return data.get("result", {}).get("message_id")
     except Exception as e:
         logger.error("Failed to send Telegram notification: %s", e)
+        return None
 
 
 def answer_callback_query(

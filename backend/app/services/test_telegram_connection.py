@@ -46,13 +46,12 @@ def test_user(db: Session):
 
 def test_generate_connection_link(db: Session, test_user: GoogleAccount, monkeypatch):
     monkeypatch.setattr("app.core.settings.settings.telegram_bot_username", "InboxPilotBot")
-    
-    link = TelegramConnectionService.generate_connection_link(db, user_id=test_user.id)
+    link = TelegramConnectionService.generate_connection_link(db, user_id=str(test_user.id))
     assert link.startswith("https://t.me/InboxPilotBot?start=")
     
     # Check that it's in the database
     token = link.split("=")[-1]
-    conn = get_telegram_connection_by_user_id(db, user_id=test_user.id)
+    conn = get_telegram_connection_by_user_id(db, user_id=str(test_user.id))
     assert conn is not None
     assert conn.connection_token == token
     assert conn.connected_at is None
@@ -60,10 +59,10 @@ def test_generate_connection_link(db: Session, test_user: GoogleAccount, monkeyp
 
 def test_connect_account_success(db: Session, test_user: GoogleAccount, monkeypatch):
     monkeypatch.setattr("app.core.settings.settings.telegram_bot_username", "InboxPilotBot")
-    TelegramConnectionService.generate_connection_link(db, user_id=test_user.id)
+    TelegramConnectionService.generate_connection_link(db, user_id=str(test_user.id))
     
     # Fetch the previously generated token
-    conn = get_telegram_connection_by_user_id(db, user_id=test_user.id)
+    conn = get_telegram_connection_by_user_id(db, user_id=str(test_user.id))
     token = conn.connection_token
     
     TelegramConnectionService.connect_account(
@@ -81,10 +80,10 @@ def test_connect_account_success(db: Session, test_user: GoogleAccount, monkeypa
 
 def test_connect_account_already_connected(db: Session, test_user: GoogleAccount, monkeypatch):
     monkeypatch.setattr("app.core.settings.settings.telegram_bot_username", "InboxPilotBot")
-    TelegramConnectionService.generate_connection_link(db, user_id=test_user.id)
+    TelegramConnectionService.generate_connection_link(db, user_id=str(test_user.id))
     
     # Fetch the previously generated token
-    conn = get_telegram_connection_by_user_id(db, user_id=test_user.id)
+    conn = get_telegram_connection_by_user_id(db, user_id=str(test_user.id))
     token = conn.connection_token
     
     # Connect once
@@ -111,12 +110,12 @@ def test_connect_account_invalid_token(db: Session):
 
 def test_connect_account_expired_token(db: Session, test_user: GoogleAccount, monkeypatch):
     monkeypatch.setattr("app.core.settings.settings.telegram_bot_username", "InboxPilotBot")
-    TelegramConnectionService.generate_connection_link(db, user_id=test_user.id)
+    TelegramConnectionService.generate_connection_link(db, user_id=str(test_user.id))
     
     import secrets
     from app.repositories.telegram_connection_repository import update_telegram_connection
 
-    conn = get_telegram_connection_by_user_id(db, user_id=test_user.id)
+    conn = get_telegram_connection_by_user_id(db, user_id=str(test_user.id))
     
     # Reset connection for this test
     conn.connected_at = None
@@ -133,7 +132,9 @@ def test_connect_account_expired_token(db: Session, test_user: GoogleAccount, mo
         )
 
 
-def test_connect_account_already_linked_chat(db: Session, monkeypatch):
+def test_connect_account_already_linked_elsewhere(db: Session, monkeypatch):
+    user_id_1 = "test-user-1"
+    user_id_2 = "test-user-2"
     monkeypatch.setattr("app.core.settings.settings.telegram_bot_username", "InboxPilotBot")
     
     # Clean up any leftover users from previous failed runs
@@ -150,12 +151,12 @@ def test_connect_account_already_linked_chat(db: Session, monkeypatch):
     db.refresh(user2)
 
     # Link user1 to chat "999"
-    link1 = TelegramConnectionService.generate_connection_link(db, user_id=user1.id)
+    link1 = TelegramConnectionService.generate_connection_link(db, user_id=str(user1.id))
     token1 = link1.split("=")[-1]
     TelegramConnectionService.connect_account(db, token1, "userA", "999")
 
     # Try to link user2 to chat "999"
-    link2 = TelegramConnectionService.generate_connection_link(db, user_id=user2.id)
+    link2 = TelegramConnectionService.generate_connection_link(db, user_id=str(user2.id))
     token2 = link2.split("=")[-1]
     
     with pytest.raises(ValueError, match="This Telegram account is already linked to another user."):
