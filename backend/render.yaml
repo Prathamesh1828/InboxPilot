@@ -1,0 +1,48 @@
+services:
+  - type: web
+    name: inboxpilot-api
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: inboxpilot-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: inboxpilot-redis
+          property: connectionString
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "False"
+
+  - type: worker
+    name: inboxpilot-celery
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A app.workers.celery_app worker --loglevel=info
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: inboxpilot-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: inboxpilot-redis
+          property: connectionString
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "False"
+
+databases:
+  - name: inboxpilot-db
+    databaseName: inboxpilot
+    user: inboxpilot
+
+  - type: redis
+    name: inboxpilot-redis
