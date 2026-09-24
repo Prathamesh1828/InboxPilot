@@ -4,6 +4,9 @@ import logging
 from sqlalchemy.orm import Session
 
 from app.models.audit_event import AuditEvent
+from app.models.email import Email
+import json
+from app.core.redis import redis_client
 
 logger = logging.getLogger(__name__)
 
@@ -53,6 +56,29 @@ def log_audit_event(
 
         db.add(event)
         db.commit()
+        db.refresh(event)
+        
+        # Publish real-time event to the specific user's channel
+        try:
+            email = db.query(Email).filter(Email.id == email_id).first()
+            if email and email.user_id:
+                event_dict = {
+                    "id": event.id,
+                    "email_id": event.email_id,
+                    "approval_id": event.approval_id,
+                    "event_type": event.event_type,
+                    "action": event.action,
+                    "status": event.status,
+                    "details": event.details,
+                    "created_at": event.created_at.isoformat()
+                }
+                redis_client.publish(
+                    f"audit_logs:{email.user_id}",
+                    json.dumps(event_dict)
+                )
+        except Exception as pub_exc:
+            logger.error("Failed to publish audit event: %s", pub_exc)
+
     except Exception as exc:
         db.rollback()
         logger.error(
@@ -72,9 +98,11 @@ def get_email_audit_events(db: Session, email_id: int) -> list[AuditEvent]:
     )
 
 
-def get_all_audit_events(db: Session, skip: int = 0, limit: int = 50) -> list[AuditEvent]:
+def get_all_audit_events(db: Session, user_id: str, skip: int = 0, limit: int = 50) -> list[AuditEvent]:
     return (
         db.query(AuditEvent)
+        .join(Email, AuditEvent.email_id == Email.id)
+        .filter(Email.user_id == user_id)
         .order_by(AuditEvent.created_at.desc())
         .offset(skip)
         .limit(limit)

@@ -52,6 +52,10 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
         if auth_header.startswith("Bearer "):
             token = auth_header[7:]
 
+    # 3. Fall back to query param for EventSource / SSE
+    if not token:
+        token = request.query_params.get("token")
+
     if not token:
         raise HTTPException(status_code=401, detail="Authentication required")
 

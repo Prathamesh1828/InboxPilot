@@ -12,21 +12,84 @@ import { auditApi } from "@/lib/api/emails";
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [connectionState, setConnectionState] = useState<"Connecting..." | "Live" | "Reconnecting..." | "Offline">("Connecting...");
+
 
   useEffect(() => {
+    let mounted = true;
+
     auditApi.getGlobalAudit(0, 50)
       .then(data => {
+        if (!mounted) return;
         setLogs(data);
         setLoading(false);
       })
       .catch(console.error);
+
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+    const token = localStorage.getItem("inboxpilot_token");
+    let sseUrl = `${API_URL}/audit/stream`;
+    if (token) sseUrl += `?token=${token}`;
+
+    const sse = new EventSource(sseUrl, { withCredentials: true });
+
+    sse.onopen = () => {
+      if (mounted) setConnectionState("Live");
+    };
+
+    sse.onerror = () => {
+      if (mounted) setConnectionState("Reconnecting...");
+    };
+
+    sse.addEventListener("connected", () => {
+      if (mounted) setConnectionState("Live");
+    });
+
+    sse.addEventListener("audit_log", (e) => {
+      if (!mounted) return;
+      try {
+        const newEvent = JSON.parse(e.data);
+        setLogs(prev => {
+          // Avoid duplicates
+          if (prev.some(log => log.id === newEvent.id)) return prev;
+          
+          // Adding a temporary "isNew" flag for animation highlight
+          const eventWithFlag = { ...newEvent, isNew: true };
+          
+          // Remove the isNew flag after animation duration
+          setTimeout(() => {
+            if (mounted) {
+              setLogs(current => current.map(l => l.id === newEvent.id ? { ...l, isNew: false } : l));
+            }
+          }, 2000);
+
+          return [eventWithFlag, ...prev];
+        });
+      } catch (err) {
+        console.error("Failed to parse SSE audit log", err);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      sse.close();
+      setConnectionState("Offline");
+    };
   }, []);
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight text-foreground">Audit Logs</h1>
-          <p className="text-muted-foreground mt-1">Complete history of all automated actions and decisions.</p>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
+              Audit Logs
+              <Badge variant={connectionState === "Live" ? "default" : "secondary"} className="text-xs transition-colors bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20 font-normal">
+                {connectionState === "Live" && <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse" />}
+                {connectionState}
+              </Badge>
+            </h1>
+            <p className="text-muted-foreground mt-1">Complete history of all automated actions and decisions.</p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <div className="relative">
@@ -70,7 +133,7 @@ export default function AuditLogsPage() {
                 </tr>
               ) : (
                 logs.map((log) => (
-                  <tr key={log.id} className="hover:bg-secondary/5 transition-colors">
+                  <tr key={log.id} className={`transition-colors duration-1000 ${log.isNew ? 'bg-primary/10' : 'hover:bg-secondary/5'}`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <Activity className="w-4 h-4 text-muted-foreground" />
