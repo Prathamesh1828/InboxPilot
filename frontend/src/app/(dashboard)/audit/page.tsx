@@ -378,22 +378,22 @@ export default function AuditLogsPage() {
           <table className="w-full text-sm text-left">
             <thead className="text-xs text-muted-foreground uppercase bg-secondary/10 border-b border-border">
               <tr>
-                <th className="px-6 py-4 font-medium">Event</th>
-                <th className="px-6 py-4 font-medium">Action</th>
-                <th className="px-6 py-4 font-medium">Status</th>
-                <th className="px-6 py-4 font-medium">Timestamp</th>
-                <th className="px-6 py-4 font-medium text-right">Details</th>
+                <th className="px-6 py-4 font-medium text-center">Event</th>
+                <th className="px-6 py-4 font-medium text-center">Action</th>
+                <th className="px-6 py-4 font-medium text-center">Status</th>
+                <th className="px-6 py-4 font-medium text-center">Timestamp</th>
+                <th className="px-6 py-4 font-medium text-center">Details</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
                 [...Array(10)].map((_, i) => (
                   <tr key={i} className="animate-in fade-in duration-500">
-                    <td className="px-6 py-4"><Skeleton className="h-5 w-[150px]" /></td>
-                    <td className="px-6 py-4"><Skeleton className="h-5 w-[100px]" /></td>
-                    <td className="px-6 py-4"><Skeleton className="h-6 w-[80px] rounded-full" /></td>
-                    <td className="px-6 py-4"><Skeleton className="h-5 w-[100px]" /></td>
-                    <td className="px-6 py-4 text-right flex justify-end"><Skeleton className="h-5 w-[80px]" /></td>
+                    <td className="px-6 py-4 flex justify-center"><Skeleton className="h-5 w-[150px]" /></td>
+                    <td className="px-6 py-4"><div className="flex justify-center"><Skeleton className="h-5 w-[100px]" /></div></td>
+                    <td className="px-6 py-4"><div className="flex justify-center"><Skeleton className="h-6 w-[80px] rounded-full" /></div></td>
+                    <td className="px-6 py-4"><div className="flex justify-center"><Skeleton className="h-5 w-[100px]" /></div></td>
+                    <td className="px-6 py-4"><div className="flex justify-center"><Skeleton className="h-5 w-[80px]" /></div></td>
                   </tr>
                 ))
               ) : logs.length === 0 ? (
@@ -405,23 +405,23 @@ export default function AuditLogsPage() {
               ) : (
                 logs.map((log) => (
                   <tr key={log.id} className={`transition-colors duration-1000 ${log.isNew ? 'bg-primary/10' : 'hover:bg-secondary/5'}`}>
-                    <td className="px-6 py-4">
+                    <td className="px-6 py-4 text-center">
                       <span className="font-medium text-foreground">{formatEventType(log.event_type)}</span>
                     </td>
-                    <td className="px-6 py-4 text-muted-foreground">{formatAction(log.action)}</td>
-                    <td className="px-6 py-4">
-                      <Badge variant="outline" className={
+                    <td className="px-6 py-4 text-muted-foreground text-center">{formatAction(log.action)}</td>
+                    <td className="px-6 py-4 text-center">
+                      <Badge variant="outline" className={`justify-center w-[100px] ${
                         log.status === "SUCCESS" || log.status === "Executed" ? "border-green-500/20 text-green-600 bg-green-500/10" :
                         log.status === "FAILED" ? "border-destructive/20 text-destructive bg-destructive/10" :
                         "border-yellow-500/20 text-yellow-600 bg-yellow-500/10"
-                      }>
+                      }`}>
                         {log.status || "INFO"}
                       </Badge>
                     </td>
-                    <td className="px-6 py-4 text-muted-foreground whitespace-nowrap" suppressHydrationWarning>
+                    <td className="px-6 py-4 text-muted-foreground whitespace-nowrap text-center" suppressHydrationWarning>
                       {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
                     </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-center">
                       {log.email_id ? (
                         <Button 
                           variant="link" 
