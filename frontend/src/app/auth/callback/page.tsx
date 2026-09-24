@@ -6,6 +6,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 
 const TOKEN_KEY = "inboxpilot_token";
+const AUTH_COOKIE = "auth_indicator";
+
+function setAuthIndicatorCookie() {
+  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
+  document.cookie = `${AUTH_COOKIE}=1; path=/; expires=${expires}; SameSite=Lax`;
+}
 
 function CallbackHandler() {
   const router = useRouter();
@@ -20,16 +26,19 @@ function CallbackHandler() {
       return;
     }
 
-    // Save token to localStorage immediately
+    // 1. Save JWT to localStorage
     localStorage.setItem(TOKEN_KEY, token);
+    // 2. Set indicator cookie so Next.js middleware allows /dashboard
+    setAuthIndicatorCookie();
 
-    // Fetch the user profile using the new token
+    // 3. Verify the token works by fetching user profile
     refreshUser()
       .then(() => {
         router.replace("/dashboard");
       })
       .catch(() => {
         localStorage.removeItem(TOKEN_KEY);
+        document.cookie = `${AUTH_COOKIE}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
         router.replace("/login?error=oauth_failed");
       });
   }, [searchParams, refreshUser, router]);

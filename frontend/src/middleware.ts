@@ -18,18 +18,19 @@ export function middleware(request: NextRequest) {
   const isProtectedRoute = PROTECTED_ROUTES.some(r => pathname.startsWith(r));
   const isAuthRoute = AUTH_ROUTES.some(r => pathname.startsWith(r));
 
-  // Check for session cookie (set by backend with SameSite=None)
-  const sessionCookie = request.cookies.get('session')?.value;
-
-  // Check for token in custom header (set by frontend for Bearer-token flow)
-  // The frontend sets this header via a request interceptor when using localStorage token
-  const bearerToken = request.headers.get('x-auth-token');
-
-  const isAuthenticated = !!(sessionCookie || bearerToken);
+  /**
+   * We check for 'auth_indicator' — a lightweight non-httpOnly cookie set on
+   * vercel.app by the frontend after a successful login. This cookie is readable
+   * by the Next.js edge middleware (unlike the httpOnly 'session' cookie that
+   * lives on onrender.com).
+   *
+   * The actual JWT for backend requests lives in localStorage and is sent as a
+   * Bearer token — the middleware does not need to validate it.
+   */
+  const isAuthenticated = !!request.cookies.get('auth_indicator')?.value;
 
   if (!isAuthenticated && isProtectedRoute) {
     const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
 

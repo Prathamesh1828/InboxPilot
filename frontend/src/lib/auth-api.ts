@@ -1,23 +1,35 @@
 /**
  * auth-api.ts
  *
- * Handles all authentication API calls.
+ * Cross-domain auth strategy (Vercel frontend + Render backend):
  *
- * Token Strategy (cross-domain Vercel + Render):
- * - Backend sets a SameSite=None; Secure cookie on login/signup.
- *   Modern browsers will send this cookie on cross-site requests.
- * - Backend ALSO returns the token in the JSON response body.
- *   We store this in localStorage as a fallback for cases where
- *   the cookie is blocked (e.g. Safari ITP, incognito).
- * - Every API request sends: credentials: "include" (for cookie)
- *   AND Authorization: Bearer <token> header (for localStorage fallback).
- * - The backend accepts both.
+ * 1. JWT stored in localStorage → sent as Bearer token on every backend request.
+ * 2. A lightweight "auth_indicator" cookie set on vercel.app after login so
+ *    the Next.js edge middleware can detect authentication for route protection.
+ *    This cookie does NOT contain the JWT — it is just a boolean flag.
+ * 3. Backend also sets an httpOnly SameSite=None cookie for defence-in-depth,
+ *    but we don't rely on it for client-side auth state.
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 const TOKEN_KEY = "inboxpilot_token";
+const AUTH_COOKIE = "auth_indicator";
 
-// ─── Token helpers ────────────────────────────────────────────────────────────
+// ─── Cookie helpers (for the vercel.app-domain indicator cookie) ──────────────
+
+function setAuthIndicatorCookie(): void {
+  if (typeof document === "undefined") return;
+  // Expires in 7 days, matches JWT expiry
+  const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
+  document.cookie = `${AUTH_COOKIE}=1; path=/; expires=${expires}; SameSite=Lax`;
+}
+
+function clearAuthIndicatorCookie(): void {
+  if (typeof document === "undefined") return;
+  document.cookie = `${AUTH_COOKIE}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
+}
+
+// ─── Token helpers (localStorage) ─────────────────────────────────────────────
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -29,9 +41,10 @@ function saveToken(token: string): void {
   localStorage.setItem(TOKEN_KEY, token);
 }
 
-function clearToken(): void {
+export function clearToken(): void {
   if (typeof window === "undefined") return;
   localStorage.removeItem(TOKEN_KEY);
+  clearAuthIndicatorCookie();
 }
 
 // ─── Base fetch wrapper ───────────────────────────────────────────────────────
@@ -45,14 +58,12 @@ async function apiFetch(path: string, options: RequestInit = {}): Promise<Respon
 
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
-    // Also set as a custom header for the Next.js middleware to read
-    headers["x-auth-token"] = token;
   }
 
   return fetch(`${API_URL}${path}`, {
     ...options,
     headers,
-    credentials: "include", // Always send cookies too
+    credentials: "include", // Also send cookies (belt + suspenders)
   });
 }
 
@@ -73,7 +84,10 @@ export const authApi = {
     }
 
     const user = await res.json();
-    if (user.access_token) saveToken(user.access_token);
+    if (user.access_token) {
+      saveToken(user.access_token);
+      setAuthIndicatorCookie();
+    }
     return user;
   },
 
@@ -89,7 +103,10 @@ export const authApi = {
     }
 
     const user = await res.json();
-    if (user.access_token) saveToken(user.access_token);
+    if (user.access_token) {
+      saveToken(user.access_token);
+      setAuthIndicatorCookie();   // ← makes Next.js middleware allow /dashboard
+    }
     return user;
   },
 
@@ -99,7 +116,7 @@ export const authApi = {
     } catch {
       // Ignore network errors on logout
     } finally {
-      clearToken();
+      clearToken(); // also clears auth_indicator cookie
     }
   },
 
