@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { authApi } from "@/lib/auth-api";
 
@@ -26,6 +26,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  // Track if login() was called so we skip the initial getMe() race condition
+  const justLoggedIn = useRef(false);
 
   const refreshUser = useCallback(async () => {
     try {
@@ -33,32 +35,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(userData);
     } catch {
       setUser(null);
-      authApi.clearToken(); // Clean up stale token
+      authApi.clearToken();
     }
   }, []);
 
-  // On mount, try to restore the session from the backend
+  // On mount, restore session from backend using stored token
   useEffect(() => {
     const init = async () => {
       setIsLoading(true);
-      await refreshUser();
+      // Skip the check if login() was already called (avoids race condition)
+      if (!justLoggedIn.current) {
+        await refreshUser();
+      }
       setIsLoading(false);
     };
     init();
-  }, [refreshUser]);
+  }, []); // Run only once on mount
 
-  // Called immediately after a successful login API response
-  // userData should be the full user object returned by /auth/login or /auth/signup
-  const login = (userData: User) => {
+  /**
+   * Called after a successful login API response.
+   * Sets the user directly (no extra getMe() needed — we already have the user data).
+   * Then navigates to the dashboard.
+   */
+  const login = useCallback((userData: User) => {
+    justLoggedIn.current = true;
     setUser(userData);
+    setIsLoading(false);
     router.push("/dashboard");
-  };
+  }, [router]);
 
-  const logout = async () => {
+  const logout = useCallback(async () => {
     await authApi.logout();
     setUser(null);
+    justLoggedIn.current = false;
     router.push("/login");
-  };
+  }, [router]);
 
   return (
     <AuthContext.Provider
