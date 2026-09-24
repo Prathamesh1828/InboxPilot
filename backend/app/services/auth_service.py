@@ -30,7 +30,7 @@ class AuthService:
     def login(self, login_in: UserLogin) -> User:
         user = self.user_repo.get_by_email(login_in.email)
         
-        if user and user.auth_provider == "google":
+        if user and user.auth_provider == "google" and not user.password_hash:
             raise HTTPException(
                 status_code=401, 
                 detail="This account uses Google sign-in. Please continue with Google."
@@ -54,10 +54,7 @@ class AuthService:
         
         if user:
             if user.auth_provider == "password":
-                raise HTTPException(
-                    status_code=401,
-                    detail="This email is registered with a password. Please log in with email and password."
-                )
+                user.auth_provider = "google" # Upgrade to google auth seamlessly
             
             if not user.is_active:
                 raise HTTPException(status_code=400, detail="Inactive user")
