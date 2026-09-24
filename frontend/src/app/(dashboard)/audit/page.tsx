@@ -20,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function formatEventType(eventType: string) {
   const mapping: Record<string, string> = {
@@ -326,12 +327,15 @@ export default function AuditLogsPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {loading ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
-                    <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                    Loading audit logs...
-                  </td>
-                </tr>
+                [...Array(10)].map((_, i) => (
+                  <tr key={i} className="animate-in fade-in duration-500">
+                    <td className="px-6 py-4"><Skeleton className="h-5 w-[150px]" /></td>
+                    <td className="px-6 py-4"><Skeleton className="h-5 w-[100px]" /></td>
+                    <td className="px-6 py-4"><Skeleton className="h-6 w-[80px] rounded-full" /></td>
+                    <td className="px-6 py-4"><Skeleton className="h-5 w-[100px]" /></td>
+                    <td className="px-6 py-4 text-right flex justify-end"><Skeleton className="h-5 w-[80px]" /></td>
+                  </tr>
+                ))
               ) : logs.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">

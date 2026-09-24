@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, User, BrainCircuit, ListTodo, ShieldCheck, FileText, CheckCircle2, XCircle, AlertTriangle, PlayCircle, Send, Reply, Forward, ExternalLink, Calendar, Copy, Check, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { WorkflowTimeline, TimelineStep } from "@/components/inbox/WorkflowTimeline";
 import { emailsApi, approvalsApi, EmailDetailData } from "@/lib/api/emails";
 import { formatDistanceToNow } from "date-fns";
@@ -74,10 +75,27 @@ export default function EmailDetailPage({ params }: { params: Promise<{ id: stri
 
   if (loading && !email) {
     return (
-      <div className="flex h-[50vh] items-center justify-center space-x-2">
-        <div className="w-4 h-4 rounded-full bg-primary/40 animate-bounce"></div>
-        <div className="w-4 h-4 rounded-full bg-primary/60 animate-bounce [animation-delay:-.3s]"></div>
-        <div className="w-4 h-4 rounded-full bg-primary animate-bounce [animation-delay:-.5s]"></div>
+      <div className="space-y-6 max-w-7xl mx-auto pb-10 animate-in fade-in duration-500 mt-4">
+        <div className="flex items-center gap-4">
+          <Skeleton className="w-10 h-10 rounded-full" />
+          <div>
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div className="lg:col-span-8 space-y-6">
+            <Skeleton className="h-[400px] w-full rounded-2xl" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Skeleton className="h-[200px] w-full rounded-2xl" />
+              <Skeleton className="h-[200px] w-full rounded-2xl" />
+            </div>
+          </div>
+          <div className="lg:col-span-4 space-y-6">
+            <Skeleton className="h-[500px] w-full rounded-2xl" />
+          </div>
+        </div>
       </div>
     );
   }

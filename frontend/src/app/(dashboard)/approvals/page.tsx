@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ApprovalData, ApprovalCard } from "@/components/approvals/ApprovalCard";
 import { CheckSquare, Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { approvalsApi } from "@/lib/api/emails";
 
 export default function ApprovalsPage() {
@@ -43,12 +44,12 @@ export default function ApprovalsPage() {
     return (
       <div className="space-y-6 animate-in fade-in duration-500">
         <div>
-          <div className="h-9 w-48 mb-2 bg-secondary/50 animate-pulse rounded-md" />
-          <div className="h-5 w-96 bg-secondary/50 animate-pulse rounded-md" />
+          <Skeleton className="h-9 w-48 mb-2" />
+          <Skeleton className="h-5 w-96" />
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-card border border-border rounded-xl shadow-sm overflow-hidden h-64 animate-pulse"></div>
+            <Skeleton key={i} className="h-64 w-full rounded-xl" />
           ))}
         </div>
       </div>

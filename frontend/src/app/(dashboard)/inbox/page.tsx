@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Filter, RefreshCw, X, ChevronLeft, ChevronRight, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmailRow, EmailData } from "@/components/inbox/EmailRow";
+import { Skeleton } from "@/components/ui/skeleton";
 import { emailsApi, EmailQueryParams } from "@/lib/api/emails";
 
 export default function InboxPage() {
@@ -381,9 +382,26 @@ export default function InboxPage() {
         
         <div className="overflow-y-auto flex-1">
           {loading ? (
-            <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
-              <div className="animate-spin mb-4"><RefreshCw className="w-6 h-6 text-muted-foreground" /></div>
-              <p>Loading emails...</p>
+            <div className="divide-y divide-border">
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className="px-4 py-4 flex items-center gap-4 animate-in fade-in duration-500">
+                  <div className="w-2 shrink-0" />
+                  <div className="w-1/4 min-w-[120px] max-w-[200px] shrink-0">
+                    <Skeleton className="h-5 w-3/4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <Skeleton className="h-5 w-1/2" />
+                  </div>
+                  <div className="hidden lg:flex items-center gap-2 w-[260px] shrink-0">
+                    <div className="w-[70px] flex justify-center"><Skeleton className="h-6 w-[60px] rounded-full" /></div>
+                    <div className="w-[60px] flex justify-center"><Skeleton className="h-5 w-[40px]" /></div>
+                    <div className="w-[100px] flex justify-center"><Skeleton className="h-6 w-[80px] rounded-full" /></div>
+                  </div>
+                  <div className="w-[100px] flex justify-center shrink-0">
+                    <Skeleton className="h-5 w-[60px]" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : emails.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">

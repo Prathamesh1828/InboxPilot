@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Mail, Calendar, Smartphone, CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { integrationsApi, IntegrationsResponse, IntegrationStatus } from "@/lib/api/integrations";
 import { API_BASE_URL } from "@/lib/api/client";
 import { toast } from "sonner";
@@ -101,8 +102,16 @@ export default function IntegrationsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64 text-muted-foreground">
-        <Loader2 className="w-8 h-8 animate-spin" />
+      <div className="space-y-6 pb-20 animate-in fade-in duration-500">
+        <div>
+          <Skeleton className="h-9 w-48 mb-2" />
+          <Skeleton className="h-5 w-96" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => (
+            <Skeleton key={i} className="h-[280px] w-full rounded-xl" />
+          ))}
+        </div>
       </div>
     );
   }

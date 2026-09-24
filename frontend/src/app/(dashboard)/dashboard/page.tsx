@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { Mail, CheckSquare, Zap, Percent } from "lucide-react";
 import { KpiCard } from "@/components/dashboard/KpiCard";
 import { ActivityList } from "@/components/dashboard/ActivityList";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Greeting } from "@/components/dashboard/Greeting";
 import Link from "next/link";
 import { dashboardApi, DashboardStats } from "@/lib/api/emails";
 
 export default function DashboardPage() {
+  const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats>({
     emails_processed: 0,
     pending_approvals: 0,
@@ -25,7 +27,8 @@ export default function DashboardPage() {
   const fetchStats = () => {
     dashboardApi.getStats()
       .then(setStats)
-      .catch(console.error);
+      .catch(console.error)
+      .finally(() => setIsLoading(false));
   };
 
   useEffect(() => {
@@ -55,42 +58,62 @@ export default function DashboardPage() {
 
       {/* KPIs */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          title="Emails Processed"
-          value={stats.emails_processed.toLocaleString()}
-          subtitle="Total ingested"
-          icon={Mail}
-        />
-        <KpiCard
-          title="Pending Approvals"
-          value={stats.pending_approvals.toString()}
-          subtitle="Requires your attention"
-          icon={CheckSquare}
-        />
-        <KpiCard
-          title="Actions Executed"
-          value={stats.actions_executed.toLocaleString()}
-          subtitle="Processed successfully"
-          icon={Zap}
-        />
-        <KpiCard
-          title="Automation Rate"
-          value={`${stats.automation_rate}%`}
-          subtitle="Of all incoming email"
-          icon={Percent}
-        />
+        {isLoading ? (
+          [...Array(4)].map((_, i) => (
+            <Skeleton key={i} className="h-[120px] rounded-xl" />
+          ))
+        ) : (
+          <>
+            <KpiCard
+              title="Emails Processed"
+              value={stats.emails_processed.toLocaleString()}
+              subtitle="Total ingested"
+              icon={Mail}
+            />
+            <KpiCard
+              title="Pending Approvals"
+              value={stats.pending_approvals.toString()}
+              subtitle="Requires your attention"
+              icon={CheckSquare}
+            />
+            <KpiCard
+              title="Actions Executed"
+              value={stats.actions_executed.toLocaleString()}
+              subtitle="Processed successfully"
+              icon={Zap}
+            />
+            <KpiCard
+              title="Automation Rate"
+              value={`${stats.automation_rate}%`}
+              subtitle="Of all incoming email"
+              icon={Percent}
+            />
+          </>
+        )}
       </div>
 
       {/* Main Content Area */}
       <div className="grid gap-6 md:grid-cols-7">
         <div className="md:col-span-4 lg:col-span-5 space-y-6">
-          <ActivityList activities={stats.recent_activity} />
+          {isLoading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-48 mb-4" />
+              {[...Array(3)].map((_, i) => (
+                <Skeleton key={i} className="h-[100px] w-full rounded-xl" />
+              ))}
+            </div>
+          ) : (
+            <ActivityList activities={stats.recent_activity} />
+          )}
         </div>
         
         <div className="md:col-span-3 lg:col-span-2 space-y-6">
           {/* System Status */}
-          <div className="bg-card border border-border rounded-xl p-6 shadow-sm space-y-4">
-            <h3 className="font-semibold text-foreground">System Status</h3>
+          {isLoading ? (
+            <Skeleton className="h-[220px] w-full rounded-xl" />
+          ) : (
+            <div className="bg-card border border-border rounded-xl p-6 shadow-sm space-y-4">
+              <h3 className="font-semibold text-foreground">System Status</h3>
             <div className="space-y-3">
               {[
                 { name: "Gmail", status: stats.system_status.gmail_integration, href: "/integrations" },
@@ -130,6 +153,7 @@ export default function DashboardPage() {
               })}
             </div>
           </div>
+          )}
         </div>
       </div>
     </div>
