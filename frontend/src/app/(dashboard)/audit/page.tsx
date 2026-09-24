@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { formatDistanceToNow, subDays } from "date-fns";
-import { auditApi, AuditQueryParams } from "@/lib/api/emails";
+import { auditApi, emailsApi, AuditQueryParams } from "@/lib/api/emails";
+import { toast } from "sonner";
 import {
   Popover,
   PopoverContent,
@@ -57,6 +58,26 @@ export default function AuditLogsPage() {
   const [timeRange, setTimeRange] = useState("All Time");
   
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [openingEmailId, setOpeningEmailId] = useState<number | null>(null);
+
+  const handleOpenEmail = async (emailId: number) => {
+    try {
+      setOpeningEmailId(emailId);
+      const email = await emailsApi.getOne(emailId.toString());
+      if (email.thread_id) {
+        window.open(`https://mail.google.com/mail/u/0/#all/${email.thread_id}`, '_blank');
+      } else {
+        toast.error("Gmail thread ID not found. Falling back to internal view.");
+        window.open(`/inbox/${emailId}`, '_blank');
+      }
+    } catch (e) {
+      console.error("Failed to open email", e);
+      toast.error("Could not fetch email details.");
+      window.open(`/inbox/${emailId}`, '_blank');
+    } finally {
+      setOpeningEmailId(null);
+    }
+  };
 
   const fetchLogs = useCallback(() => {
     setLoading(true);
@@ -363,9 +384,14 @@ export default function AuditLogsPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       {log.email_id ? (
-                        <Link href={`/inbox/${log.email_id}`} className="text-primary hover:underline font-medium">
-                          View Email
-                        </Link>
+                        <Button 
+                          variant="link" 
+                          className="text-primary hover:underline font-medium p-0 h-auto"
+                          onClick={() => handleOpenEmail(log.email_id)}
+                          disabled={openingEmailId === log.email_id}
+                        >
+                          {openingEmailId === log.email_id ? "Opening..." : "View Email"}
+                        </Button>
                       ) : (
                         <span className="text-muted-foreground italic text-xs">No email linked</span>
                       )}

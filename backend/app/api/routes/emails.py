@@ -90,6 +90,7 @@ def read_email(
     request: Request,
     email_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Get a single email by its database ID, enriched with workflow state.
@@ -100,7 +101,7 @@ def read_email(
         email_id=email_id,
     )
 
-    if email is None:
+    if email is None or email.user_id != current_user.id:
         raise HTTPException(
             status_code=404,
             detail="Email not found",
@@ -202,6 +203,7 @@ def read_email_audit_trail(
     request: Request,
     email_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Get the chronological audit trail for a single email.
@@ -212,7 +214,7 @@ def read_email_audit_trail(
         email_id=email_id,
     )
 
-    if email is None:
+    if email is None or email.user_id != current_user.id:
         raise HTTPException(
             status_code=404,
             detail="Email not found",
@@ -272,6 +274,7 @@ def process_email(
     request: Request,
     email_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Queue an email for background processing.
@@ -296,7 +299,7 @@ def process_email(
         email_id=email_id,
     )
 
-    if email is None:
+    if email is None or email.user_id != current_user.id:
         raise HTTPException(
             status_code=404,
             detail="Email not found",

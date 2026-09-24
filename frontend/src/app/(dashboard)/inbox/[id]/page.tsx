@@ -18,6 +18,36 @@ export default function EmailDetailPage({ params }: { params: Promise<{ id: stri
   const [copied, setCopied] = useState(false);
   const [processing, setProcessing] = useState(false);
 
+  const openGmailReply = () => {
+    if (!email) return;
+    const to = encodeURIComponent(email.sender);
+    const su = encodeURIComponent(`Re: ${email.subject || ""}`);
+    let url = `https://mail.google.com/mail/u/0/?view=cm&fs=1&to=${to}&su=${su}`;
+    if (email.thread_id) {
+      url += `&th=${email.thread_id}`;
+    }
+    window.open(url, '_blank');
+  };
+
+  const openGmailForward = () => {
+    if (!email) return;
+    const su = encodeURIComponent(`Fwd: ${email.subject || ""}`);
+    let url = `https://mail.google.com/mail/u/0/?view=cm&fs=1&su=${su}`;
+    if (email.thread_id) {
+      url += `&th=${email.thread_id}`;
+    }
+    window.open(url, '_blank');
+  };
+
+  const openGmailMessage = () => {
+    if (!email) return;
+    if (email.thread_id) {
+      window.open(`https://mail.google.com/mail/u/0/#all/${email.thread_id}`, '_blank');
+    } else {
+      alert("Gmail thread ID not available.");
+    }
+  };
+
   const fetchData = () => {
     setLoading(true);
     Promise.all([
@@ -153,13 +183,13 @@ export default function EmailDetailPage({ params }: { params: Promise<{ id: stri
                 </h2>
                 
                 <div className="flex items-center gap-2 shrink-0">
-                  <Button variant="outline" size="sm" className="h-8 gap-1.5 hidden sm:flex">
+                  <Button variant="outline" size="sm" className="h-8 gap-1.5 hidden sm:flex" onClick={openGmailReply}>
                     <Reply className="w-3.5 h-3.5" /> Reply
                   </Button>
-                  <Button variant="outline" size="sm" className="h-8 gap-1.5 hidden sm:flex">
+                  <Button variant="outline" size="sm" className="h-8 gap-1.5 hidden sm:flex" onClick={openGmailForward}>
                     <Forward className="w-3.5 h-3.5" /> Forward
                   </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={openGmailMessage} title="Open in Gmail">
                     <ExternalLink className="w-4 h-4 text-muted-foreground" />
                   </Button>
                 </div>

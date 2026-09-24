@@ -22,6 +22,9 @@ export interface PaginatedEmailResponse {
 }
 
 export interface EmailDetailData extends EmailData {
+  provider_message_id?: string;
+  thread_id?: string;
+  recipients?: string[];
   received_at?: string;
   body?: string;
   classification_confidence?: number | null;
