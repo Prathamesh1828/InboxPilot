@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Search, Filter, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,18 +9,6 @@ import Link from "next/link";
 import { formatDistanceToNow, subDays } from "date-fns";
 import { auditApi, emailsApi, AuditQueryParams } from "@/lib/api/emails";
 import { toast } from "sonner";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function formatEventType(eventType: string) {
@@ -57,7 +45,39 @@ export default function AuditLogsPage() {
   const [statusFilter, setStatusFilter] = useState("All");
   const [timeRange, setTimeRange] = useState("All Time");
   
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  // Draft Filters for the popover
+  const [draftEventType, setDraftEventType] = useState("All");
+  const [draftAction, setDraftAction] = useState("All");
+  const [draftStatus, setDraftStatus] = useState("All");
+  const [draftTimeRange, setDraftTimeRange] = useState("All Time");
+  
+  const [showFilters, setShowFilters] = useState(false);
+  const filterRef = useRef<HTMLDivElement>(null);
+
+  // Close filters when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      const target = event.target as HTMLElement;
+      if (target && target.tagName && target.tagName.toLowerCase() === 'option') {
+        return;
+      }
+      if (filterRef.current && !filterRef.current.contains(target as Node)) {
+        setShowFilters(false);
+      }
+    }
+    document.addEventListener("pointerdown", handleClickOutside);
+    return () => document.removeEventListener("pointerdown", handleClickOutside);
+  }, []);
+
+  // Sync drafts when opening filters
+  useEffect(() => {
+    if (showFilters) {
+      setDraftEventType(eventTypeFilter);
+      setDraftAction(actionFilter);
+      setDraftStatus(statusFilter);
+      setDraftTimeRange(timeRange);
+    }
+  }, [showFilters, eventTypeFilter, actionFilter, statusFilter, timeRange]);
   const [openingEmailId, setOpeningEmailId] = useState<number | null>(null);
 
   const handleOpenEmail = async (emailId: number) => {
@@ -177,12 +197,26 @@ export default function AuditLogsPage() {
     };
   }, [eventTypeFilter, actionFilter, statusFilter, search]);
 
-  const clearFilters = () => {
+  const clearFilters = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     setEventTypeFilter("All");
     setActionFilter("All");
     setStatusFilter("All");
     setTimeRange("All Time");
-    setIsFilterOpen(false);
+    setDraftEventType("All");
+    setDraftAction("All");
+    setDraftStatus("All");
+    setDraftTimeRange("All Time");
+    setShowFilters(false);
+  };
+
+  const applyFilters = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    setEventTypeFilter(draftEventType);
+    setActionFilter(draftAction);
+    setStatusFilter(draftStatus);
+    setTimeRange(draftTimeRange);
+    setShowFilters(false);
   };
 
   const activeFilterCount = [
@@ -220,87 +254,98 @@ export default function AuditLogsPage() {
             />
           </div>
           
-          <Popover open={isFilterOpen} onOpenChange={setIsFilterOpen}>
-            <PopoverTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-4 py-2 relative">
+          <div className="relative" ref={filterRef}>
+            <Button 
+              variant="outline" 
+              className={`shrink-0 border-border ${activeFilterCount > 0 ? 'bg-primary/10 text-primary border-primary/20' : ''}`}
+              onClick={() => setShowFilters(!showFilters)}
+            >
               <Filter className="h-4 w-4 mr-2" />
               Filters
-              {activeFilterCount > 0 && (
-                <span className="ml-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
-                  {activeFilterCount}
-                </span>
-              )}
-            </PopoverTrigger>
-            <PopoverContent className="w-80" align="end">
-              <div className="space-y-4">
+              {activeFilterCount > 0 && <span className="ml-1 w-2 h-2 rounded-full bg-primary" />}
+            </Button>
+            {showFilters && (
+              <div className="absolute right-0 top-full mt-2 w-72 bg-card border border-border shadow-lg rounded-xl p-4 z-50 flex flex-col gap-4">
                 <div className="flex items-center justify-between">
-                  <h4 className="font-medium leading-none text-sm">Filters</h4>
+                  <h3 className="font-semibold text-sm">Filters</h3>
                   {activeFilterCount > 0 && (
-                    <Button variant="ghost" size="sm" onClick={clearFilters} className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground">
-                      Clear filters
-                    </Button>
+                    <button onClick={clearFilters} className="text-xs text-muted-foreground hover:text-foreground">Clear all</button>
                   )}
                 </div>
                 
-                <div className="grid gap-2">
-                  <div className="grid gap-1">
-                    <label className="text-xs text-muted-foreground">Event Type</label>
-                    <Select value={eventTypeFilter} onValueChange={(val) => setEventTypeFilter(val as string)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="All">All</SelectItem>
-                        <SelectItem value="WORKFLOW_COMPLETED">Workflow Completed</SelectItem>
-                        <SelectItem value="EXECUTION_STARTED">Action Started</SelectItem>
-                        <SelectItem value="EXECUTION_COMPLETED">Action Completed</SelectItem>
-                        <SelectItem value="SAFETY_EVALUATED">Safety Check</SelectItem>
-                        <SelectItem value="GROUNDING_PASSED">Information Verified</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Event Type</label>
+                    <select 
+                      className="w-full text-sm rounded-md border border-border bg-background p-2"
+                      value={draftEventType}
+                      onChange={(e) => setDraftEventType(e.target.value)}
+                    >
+                      <option value="All">All Event Types</option>
+                      <option value="WORKFLOW_COMPLETED">Workflow Completed</option>
+                      <option value="EXECUTION_STARTED">Action Started</option>
+                      <option value="EXECUTION_COMPLETED">Action Completed</option>
+                      <option value="SAFETY_EVALUATED">Safety Check</option>
+                      <option value="GROUNDING_PASSED">Information Verified</option>
+                    </select>
                   </div>
                   
-                  <div className="grid gap-1">
-                    <label className="text-xs text-muted-foreground">Action</label>
-                    <Select value={actionFilter} onValueChange={(val) => setActionFilter(val as string)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="All">All</SelectItem>
-                        <SelectItem value="ARCHIVE">Archive</SelectItem>
-                        <SelectItem value="NO_ACTION">No Action</SelectItem>
-                        <SelectItem value="DRAFT_REPLY">Draft Reply</SelectItem>
-                        <SelectItem value="CREATE_CALENDAR_EVENT">Add to Calendar</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Action</label>
+                    <select 
+                      className="w-full text-sm rounded-md border border-border bg-background p-2"
+                      value={draftAction}
+                      onChange={(e) => setDraftAction(e.target.value)}
+                    >
+                      <option value="All">All Actions</option>
+                      <option value="ARCHIVE">Archive</option>
+                      <option value="NO_ACTION">No Action</option>
+                      <option value="DRAFT_REPLY">Draft Reply</option>
+                      <option value="CREATE_CALENDAR_EVENT">Add to Calendar</option>
+                    </select>
                   </div>
                   
-                  <div className="grid gap-1">
-                    <label className="text-xs text-muted-foreground">Status</label>
-                    <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val as string)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="All">All</SelectItem>
-                        <SelectItem value="SUCCESS">SUCCESS</SelectItem>
-                        <SelectItem value="PENDING">PENDING</SelectItem>
-                        <SelectItem value="FAILED">FAILED</SelectItem>
-                        <SelectItem value="INFO">INFO</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Status</label>
+                    <select 
+                      className="w-full text-sm rounded-md border border-border bg-background p-2"
+                      value={draftStatus}
+                      onChange={(e) => setDraftStatus(e.target.value)}
+                    >
+                      <option value="All">All Statuses</option>
+                      <option value="SUCCESS">SUCCESS</option>
+                      <option value="PENDING">PENDING</option>
+                      <option value="FAILED">FAILED</option>
+                      <option value="INFO">INFO</option>
+                    </select>
                   </div>
 
-                  <div className="grid gap-1">
-                    <label className="text-xs text-muted-foreground">Time Range</label>
-                    <Select value={timeRange} onValueChange={(val) => setTimeRange(val as string)}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="All Time">All Time</SelectItem>
-                        <SelectItem value="Today">Today</SelectItem>
-                        <SelectItem value="Last 7 Days">Last 7 Days</SelectItem>
-                        <SelectItem value="Last 30 Days">Last 30 Days</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-muted-foreground">Time Range</label>
+                    <select 
+                      className="w-full text-sm rounded-md border border-border bg-background p-2"
+                      value={draftTimeRange}
+                      onChange={(e) => setDraftTimeRange(e.target.value)}
+                    >
+                      <option value="All Time">All time</option>
+                      <option value="Today">Today</option>
+                      <option value="Last 7 Days">Last 7 days</option>
+                      <option value="Last 30 Days">Last 30 days</option>
+                    </select>
+                  </div>
+                  
+                  <div className="pt-2 flex items-center justify-between gap-2 border-t border-border mt-2">
+                    <Button type="button" variant="ghost" size="sm" onClick={clearFilters} className="text-muted-foreground">
+                      Clear Filters
+                    </Button>
+                    <Button type="button" size="sm" onClick={applyFilters}>
+                      Apply Filters
+                    </Button>
                   </div>
                 </div>
               </div>
-            </PopoverContent>
-          </Popover>
+            )}
+          </div>
         </div>
       </div>
 
