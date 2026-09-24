@@ -4,6 +4,11 @@ const defaultHeaders = {
   "Content-Type": "application/json",
 };
 
+function getAuthHeaders(): Record<string, string> {
+  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+  return token ? { ...defaultHeaders, Authorization: `Bearer ${token}` } : defaultHeaders;
+}
+
 export const authApi = {
   async signup(data: any) {
     const res = await fetch(`${API_URL}/auth/signup`, {
@@ -16,7 +21,12 @@ export const authApi = {
       const error = await res.json().catch(() => ({}));
       throw new Error(error.detail || "Failed to create account. Please try again.");
     }
-    return res.json();
+    const user = await res.json();
+    // Save token to localStorage for cross-domain auth
+    if (user.access_token && typeof window !== "undefined") {
+      localStorage.setItem("token", user.access_token);
+    }
+    return user;
   },
 
   async login(data: any) {
@@ -30,7 +40,12 @@ export const authApi = {
       const error = await res.json().catch(() => ({}));
       throw new Error(error.detail || "Incorrect email or password.");
     }
-    return res.json();
+    const user = await res.json();
+    // Save token to localStorage for cross-domain auth
+    if (user.access_token && typeof window !== "undefined") {
+      localStorage.setItem("token", user.access_token);
+    }
+    return user;
   },
 
   async logout() {
@@ -38,9 +53,14 @@ export const authApi = {
       await fetch(`${API_URL}/auth/logout`, {
         method: "POST",
         credentials: "include",
+        headers: getAuthHeaders(),
       });
     } catch (e) {
       // Ignore network errors on logout
+    } finally {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("token");
+      }
     }
   },
 
@@ -48,6 +68,7 @@ export const authApi = {
     const res = await fetch(`${API_URL}/auth/me`, {
       method: "GET",
       credentials: "include",
+      headers: getAuthHeaders(),
     });
     if (!res.ok) {
       throw new Error("Not authenticated");

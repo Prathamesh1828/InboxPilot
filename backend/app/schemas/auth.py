@@ -18,6 +18,7 @@ class UserResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     last_login_at: datetime | None = None
+    access_token: str | None = None  # Returned on login/signup for cross-domain auth
 
     class Config:
         from_attributes = True

@@ -30,7 +30,9 @@ def signup(user_in: UserCreate, response: Response, db: Session = Depends(get_db
         samesite="lax",
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
-    return user
+    result = UserResponse.model_validate(user)
+    result.access_token = access_token
+    return result
 
 @router.post("/login", response_model=UserResponse)
 def login(login_in: UserLogin, response: Response, db: Session = Depends(get_db)):
@@ -50,7 +52,9 @@ def login(login_in: UserLogin, response: Response, db: Session = Depends(get_db)
         samesite="lax",
         max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
-    return user
+    result = UserResponse.model_validate(user)
+    result.access_token = access_token
+    return result
 
 @router.post("/logout")
 def logout(response: Response):
