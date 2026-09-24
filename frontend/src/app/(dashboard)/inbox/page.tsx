@@ -341,9 +341,9 @@ export default function InboxPage() {
       )}
 
       <div className="bg-card border border-border rounded-xl shadow-sm flex-1 overflow-hidden flex flex-col min-h-0">
-        <div className="px-4 py-3 border-b border-border bg-secondary/10 flex items-center justify-between text-xs font-medium text-muted-foreground uppercase tracking-wider shrink-0">
+        <div className="px-4 py-3 border-b border-border bg-secondary/10 flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-4 text-xs font-medium text-muted-foreground uppercase tracking-wider shrink-0">
           <div className="flex items-center gap-4 flex-1 min-w-0">
-            <div className="w-2 shrink-0" />
+            <div className="w-2 shrink-0 hidden lg:block" />
             <div 
               className="w-1/4 min-w-[120px] max-w-[200px] cursor-pointer hover:text-foreground select-none flex items-center shrink-0"
               onClick={() => handleSort("sender")}
@@ -352,31 +352,34 @@ export default function InboxPage() {
             </div>
             <div className="flex-1 min-w-0 truncate">Subject</div>
           </div>
-          <div className="hidden lg:flex items-center gap-2 w-[260px] shrink-0">
-            <div 
-              className="w-[70px] cursor-pointer hover:text-foreground select-none flex items-center justify-center"
-              onClick={() => handleSort("category")}
-            >
-              Category <SortIcon column="category" />
+          
+          <div className="hidden lg:flex items-center justify-end gap-4 w-[380px] shrink-0">
+            <div className="flex items-center gap-2 w-[260px] shrink-0">
+              <div 
+                className="w-[70px] cursor-pointer hover:text-foreground select-none flex items-center justify-center shrink-0"
+                onClick={() => handleSort("category")}
+              >
+                Category <SortIcon column="category" />
+              </div>
+              <div 
+                className="w-[60px] cursor-pointer hover:text-foreground select-none flex items-center justify-center shrink-0"
+                onClick={() => handleSort("classification_confidence")}
+              >
+                Conf <SortIcon column="classification_confidence" />
+              </div>
+              <div 
+                className="w-[100px] cursor-pointer hover:text-foreground select-none flex items-center justify-center shrink-0"
+                onClick={() => handleSort("status")}
+              >
+                Status <SortIcon column="status" />
+              </div>
             </div>
             <div 
-              className="w-[60px] cursor-pointer hover:text-foreground select-none flex items-center justify-center"
-              onClick={() => handleSort("classification_confidence")}
+              className="w-[100px] text-center cursor-pointer hover:text-foreground select-none flex items-center justify-center shrink-0"
+              onClick={() => handleSort("received_at")}
             >
-              Conf <SortIcon column="classification_confidence" />
+              Received <SortIcon column="received_at" />
             </div>
-            <div 
-              className="w-[100px] cursor-pointer hover:text-foreground select-none flex items-center justify-center"
-              onClick={() => handleSort("status")}
-            >
-              Status <SortIcon column="status" />
-            </div>
-          </div>
-          <div 
-            className="w-[100px] text-center cursor-pointer hover:text-foreground select-none flex items-center justify-center shrink-0"
-            onClick={() => handleSort("received_at")}
-          >
-            Received <SortIcon column="received_at" />
           </div>
         </div>
         
@@ -384,21 +387,26 @@ export default function InboxPage() {
           {loading ? (
             <div className="divide-y divide-border">
               {[...Array(10)].map((_, i) => (
-                <div key={i} className="px-4 py-4 flex items-center gap-4 animate-in fade-in duration-500">
-                  <div className="w-2 shrink-0" />
-                  <div className="w-1/4 min-w-[120px] max-w-[200px] shrink-0">
-                    <Skeleton className="h-5 w-3/4" />
+                <div key={i} className="px-4 py-4 flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-4 animate-in fade-in duration-500">
+                  <div className="flex items-center gap-4 flex-1 min-w-0 w-full lg:w-auto">
+                    <div className="w-2 shrink-0 hidden lg:block" />
+                    <div className="w-1/4 min-w-[120px] max-w-[200px] shrink-0">
+                      <Skeleton className="h-5 w-3/4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Skeleton className="h-5 w-1/2" />
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <Skeleton className="h-5 w-1/2" />
-                  </div>
-                  <div className="hidden lg:flex items-center gap-2 w-[260px] shrink-0">
-                    <div className="w-[70px] flex justify-center"><Skeleton className="h-6 w-[60px] rounded-full" /></div>
-                    <div className="w-[60px] flex justify-center"><Skeleton className="h-5 w-[40px]" /></div>
-                    <div className="w-[100px] flex justify-center"><Skeleton className="h-6 w-[80px] rounded-full" /></div>
-                  </div>
-                  <div className="w-[100px] flex justify-center shrink-0">
-                    <Skeleton className="h-5 w-[60px]" />
+                  
+                  <div className="flex items-center justify-between lg:justify-end gap-2 lg:gap-4 w-full lg:w-[380px] shrink-0 mt-2 lg:mt-0">
+                    <div className="flex items-center gap-2 lg:w-[260px] lg:justify-start shrink-0">
+                      <div className="lg:w-[70px] flex lg:justify-center"><Skeleton className="h-6 w-[60px] rounded-full" /></div>
+                      <div className="lg:w-[60px] flex lg:justify-center"><Skeleton className="h-5 w-[40px]" /></div>
+                      <div className="lg:w-[100px] flex lg:justify-center"><Skeleton className="h-6 w-[80px] rounded-full" /></div>
+                    </div>
+                    <div className="lg:w-[100px] flex lg:justify-center shrink-0 text-center">
+                      <Skeleton className="h-5 w-[60px]" />
+                    </div>
                   </div>
                 </div>
               ))}
