@@ -33,9 +33,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const userData = await authApi.getMe();
       setUser(userData);
-    } catch {
-      setUser(null);
-      authApi.clearToken();
+    } catch (error: any) {
+      // Only clear token and log out if it's a 401 Unauthorized or 403 Forbidden.
+      // If it's a 50x error (backend restarting) or network error, keep the token.
+      if (error?.status === 401 || error?.status === 403) {
+        setUser(null);
+        authApi.clearToken();
+      } else {
+        // Just set user to null so we don't crash, but keep token for retry
+        setUser(null);
+      }
     }
   }, []);
 

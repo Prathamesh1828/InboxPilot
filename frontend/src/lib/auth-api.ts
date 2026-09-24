@@ -123,7 +123,9 @@ export const authApi = {
   async getMe() {
     const res = await apiFetch("/auth/me");
     if (!res.ok) {
-      throw new Error("Not authenticated");
+      const err: any = new Error("Failed to get profile");
+      err.status = res.status;
+      throw err;
     }
     return res.json();
   },
