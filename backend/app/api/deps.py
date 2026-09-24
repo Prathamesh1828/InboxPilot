@@ -31,7 +31,12 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
+    # Accept token from cookie OR Authorization: Bearer header (for cross-domain auth)
     token = request.cookies.get("session")
+    if not token:
+        auth_header = request.headers.get("Authorization", "")
+        if auth_header.startswith("Bearer "):
+            token = auth_header[7:]
     if not token:
         raise HTTPException(status_code=401, detail="Not authenticated")
     
@@ -47,4 +52,4 @@ def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
     if not user or not user.is_active:
         raise HTTPException(status_code=401, detail="User not found or inactive")
         
-    return user
+    return user
