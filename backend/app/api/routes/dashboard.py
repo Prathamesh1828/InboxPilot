@@ -5,7 +5,6 @@ from sqlalchemy import func
 from app.api.deps import get_db, get_current_user
 from app.core.limiter import limiter
 from app.models.email import Email
-from app.models.action_approval import ActionApproval
 from app.models.user import User
 from app.repositories.google_account_repository import get_google_account_by_user
 from app.repositories.telegram_connection_repository import get_telegram_connection_by_user_id
@@ -32,15 +31,14 @@ def get_dashboard_stats(
     emails_processed = db.query(func.count(Email.id)).filter(Email.user_id == current_user.id).scalar() or 0
     
     pending_approvals = (
-        db.query(func.count(ActionApproval.id))
-        .join(Email, ActionApproval.email_id == Email.id)
-        .filter(Email.user_id == current_user.id, ActionApproval.status == "PENDING")
+        db.query(func.count(Email.id))
+        .filter(Email.user_id == current_user.id, Email.status == "APPROVAL_PENDING")
         .scalar() or 0
     )
     
     actions_executed = (
         db.query(func.count(Email.id))
-        .filter(Email.user_id == current_user.id, Email.status == "PROCESSED")
+        .filter(Email.user_id == current_user.id, Email.status.in_(["EXECUTED", "COMPLETED"]))
         .scalar() or 0
     )
     
