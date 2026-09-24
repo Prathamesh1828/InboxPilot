@@ -24,23 +24,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     const checkAuth = async () => {
+      // If we already have a user (e.g. just logged in), skip the check
+      if (user) {
+        setIsLoading(false);
+        return;
+      }
       try {
         const userData = await authApi.getMe();
         setUser(userData);
       } catch (error) {
         setUser(null);
+        // Only redirect to login if we're on a protected route
+        const protectedRoutes = ["/dashboard", "/inbox", "/approvals", "/audit", "/settings", "/integrations"];
+        if (protectedRoutes.some(r => pathname?.startsWith(r))) {
+          router.push("/login");
+        }
       } finally {
         setIsLoading(false);
       }
     };
     checkAuth();
-  }, []);
+  }, []); // Only run once on mount
 
   const login = (userData: User) => {
     setUser(userData);
+    setIsLoading(false);
     router.push("/dashboard");
   };
 
