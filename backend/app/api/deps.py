@@ -31,25 +31,42 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
-    # Accept token from cookie OR Authorization: Bearer header (for cross-domain auth)
+    """
+    Resolves the authenticated user from:
+      1. The 'session' HTTP-only cookie (set by login/signup endpoints).
+      2. The 'Authorization: Bearer <token>' header (fallback for clients
+         that cannot use cookies, e.g. mobile apps or when cookie is blocked).
+
+    Both sources are validated identically. This dual approach ensures
+    production cross-site auth works even if the browser blocks the cookie
+    on the first request before SameSite=None is fully established.
+    """
+    token: str | None = None
+
+    # 1. Try the HTTP-only session cookie first (preferred)
     token = request.cookies.get("session")
+
+    # 2. Fall back to Authorization header
     if not token:
         auth_header = request.headers.get("Authorization", "")
         if auth_header.startswith("Bearer "):
             token = auth_header[7:]
+
     if not token:
-        raise HTTPException(status_code=401, detail="Not authenticated")
-    
+        raise HTTPException(status_code=401, detail="Authentication required")
+
     try:
         payload = jwt.decode(token, settings.session_secret, algorithms=[ALGORITHM])
-        user_id = payload.get("sub")
+        user_id: str | None = payload.get("sub")
         if user_id is None:
-            raise HTTPException(status_code=401, detail="Invalid session")
+            raise HTTPException(status_code=401, detail="Invalid session token")
     except JWTError:
-        raise HTTPException(status_code=401, detail="Invalid session")
-        
+        raise HTTPException(status_code=401, detail="Invalid or expired session token")
+
     user = UserRepository(db).get_by_id(user_id)
-    if not user or not user.is_active:
-        raise HTTPException(status_code=401, detail="User not found or inactive")
-        
-    return user
+    if not user:
+        raise HTTPException(status_code=401, detail="User not found")
+    if not user.is_active:
+        raise HTTPException(status_code=401, detail="User account is inactive")
+
+    return user

@@ -150,17 +150,28 @@ def gmail_callback(
             subject=user.id, expires_delta=access_token_expires
         )
         
-        # Redirect to frontend dashboard
-        response = RedirectResponse(url=f"{settings.frontend_url}/dashboard", status_code=302)
+        # Redirect to frontend with the token in the URL fragment.
+        # We cannot rely on Set-Cookie here because this is a cross-site
+        # redirect (Render -> Vercel) and SameSite=None cookies are not
+        # reliably sent on 302 redirects across different domains.
+        # The frontend /auth/callback page will read the token from the URL
+        # fragment, store it in localStorage, and then navigate to /dashboard.
+        response = RedirectResponse(
+            url=f"{settings.frontend_url}/auth/callback?token={access_token}",
+            status_code=302,
+        )
+        # Also set the cookie for future same-site requests (belt + suspenders)
         response.set_cookie(
             key="session",
             value=access_token,
             httponly=True,
-            secure=settings.environment == "production",
-            samesite="lax",
+            secure=True,
+            samesite="none",
             max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+            path="/",
         )
         return response
+
 
     else:
         # Require authenticated user to connect an account

@@ -32,22 +32,23 @@ async def add_security_headers(request: Request, call_next):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     return response
 
-# CORS
+# CORS — explicit origins required when allow_credentials=True
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.frontend_url],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["Content-Type", "Authorization", "X-API-Key", "x-auth-token"],
+    expose_headers=["Set-Cookie"],
 )
 
 
-# Session support
+# Session support (for OAuth state only — JWT auth uses cookies/headers directly)
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.session_secret,
-    same_site="lax",
-    https_only=(settings.environment == "production"), 
+    same_site="none",          # Required for cross-domain
+    https_only=True,           # Must be True when SameSite=none
 )
 
 

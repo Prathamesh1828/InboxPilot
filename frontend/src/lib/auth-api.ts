@@ -1,75 +1,110 @@
+/**
+ * auth-api.ts
+ *
+ * Handles all authentication API calls.
+ *
+ * Token Strategy (cross-domain Vercel + Render):
+ * - Backend sets a SameSite=None; Secure cookie on login/signup.
+ *   Modern browsers will send this cookie on cross-site requests.
+ * - Backend ALSO returns the token in the JSON response body.
+ *   We store this in localStorage as a fallback for cases where
+ *   the cookie is blocked (e.g. Safari ITP, incognito).
+ * - Every API request sends: credentials: "include" (for cookie)
+ *   AND Authorization: Bearer <token> header (for localStorage fallback).
+ * - The backend accepts both.
+ */
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const TOKEN_KEY = "inboxpilot_token";
 
-const defaultHeaders = {
-  "Content-Type": "application/json",
-};
+// ─── Token helpers ────────────────────────────────────────────────────────────
 
-function getAuthHeaders(): Record<string, string> {
-  const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-  return token ? { ...defaultHeaders, Authorization: `Bearer ${token}` } : defaultHeaders;
+function getToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(TOKEN_KEY);
 }
 
+function saveToken(token: string): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(TOKEN_KEY, token);
+}
+
+function clearToken(): void {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(TOKEN_KEY);
+}
+
+// ─── Base fetch wrapper ───────────────────────────────────────────────────────
+
+async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  const token = getToken();
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    ...(options.headers as Record<string, string>),
+  };
+
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+    // Also set as a custom header for the Next.js middleware to read
+    headers["x-auth-token"] = token;
+  }
+
+  return fetch(`${API_URL}${path}`, {
+    ...options,
+    headers,
+    credentials: "include", // Always send cookies too
+  });
+}
+
+// ─── Auth API ─────────────────────────────────────────────────────────────────
+
 export const authApi = {
-  async signup(data: any) {
-    const res = await fetch(`${API_URL}/auth/signup`, {
+  clearToken,
+
+  async signup(data: { name: string; email: string; password: string }) {
+    const res = await apiFetch("/auth/signup", {
       method: "POST",
-      headers: defaultHeaders,
-      credentials: "include",
       body: JSON.stringify(data),
     });
+
     if (!res.ok) {
-      const error = await res.json().catch(() => ({}));
-      throw new Error(error.detail || "Failed to create account. Please try again.");
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Failed to create account. Please try again.");
     }
+
     const user = await res.json();
-    // Save token to localStorage for cross-domain auth
-    if (user.access_token && typeof window !== "undefined") {
-      localStorage.setItem("token", user.access_token);
-    }
+    if (user.access_token) saveToken(user.access_token);
     return user;
   },
 
-  async login(data: any) {
-    const res = await fetch(`${API_URL}/auth/login`, {
+  async login(data: { email: string; password: string }) {
+    const res = await apiFetch("/auth/login", {
       method: "POST",
-      headers: defaultHeaders,
-      credentials: "include",
       body: JSON.stringify(data),
     });
+
     if (!res.ok) {
-      const error = await res.json().catch(() => ({}));
-      throw new Error(error.detail || "Incorrect email or password.");
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || "Invalid email or password");
     }
+
     const user = await res.json();
-    // Save token to localStorage for cross-domain auth
-    if (user.access_token && typeof window !== "undefined") {
-      localStorage.setItem("token", user.access_token);
-    }
+    if (user.access_token) saveToken(user.access_token);
     return user;
   },
 
   async logout() {
     try {
-      await fetch(`${API_URL}/auth/logout`, {
-        method: "POST",
-        credentials: "include",
-        headers: getAuthHeaders(),
-      });
-    } catch (e) {
+      await apiFetch("/auth/logout", { method: "POST" });
+    } catch {
       // Ignore network errors on logout
     } finally {
-      if (typeof window !== "undefined") {
-        localStorage.removeItem("token");
-      }
+      clearToken();
     }
   },
 
   async getMe() {
-    const res = await fetch(`${API_URL}/auth/me`, {
-      method: "GET",
-      credentials: "include",
-      headers: getAuthHeaders(),
-    });
+    const res = await apiFetch("/auth/me");
     if (!res.ok) {
       throw new Error("Not authenticated");
     }
