@@ -65,7 +65,9 @@ async def stream_audit_events(
         
         try:
             # Yield initial connection success to establish stream
-            yield f"event: connected\\ndata: {{\"status\": \"connected\"}}\\n\\n"
+            yield "event: connected\ndata: {\"status\": \"connected\"}\n\n"
+            loop = asyncio.get_event_loop()
+            last_ping_time = loop.time()
             
             while True:
                 if await request.is_disconnected():
@@ -74,7 +76,13 @@ async def stream_audit_events(
                 message = pubsub.get_message(ignore_subscribe_messages=True, timeout=0)
                 if message and message['type'] == 'message':
                     data = message['data']
-                    yield f"event: audit_log\\ndata: {data}\\n\\n"
+                    yield f"event: audit_log\n" + f"data: {data}\n\n"
+                    last_ping_time = loop.time()
+                
+                current_time = loop.time()
+                if current_time - last_ping_time > 15:
+                    yield "event: ping\ndata: {\"status\": \"ping\"}\n\n"
+                    last_ping_time = current_time
                 
                 # Check for new messages periodically without blocking event loop
                 await asyncio.sleep(0.5)
