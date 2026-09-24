@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,6 +10,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 
+// Separated into its own component so it can be wrapped in Suspense
+// (required by Next.js when using useSearchParams in a static page)
+function OAuthErrorListener({ onError }: { onError: (msg: string) => void }) {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const err = searchParams.get("error");
+    if (err === "oauth_failed") {
+      onError("Google authentication failed. Please try again.");
+    }
+  }, [searchParams, onError]);
+  return null;
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -17,14 +30,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const err = searchParams.get("error");
-    if (err === "oauth_failed") {
-      setError("Google authentication failed. Please try again.");
-    }
-  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,6 +48,11 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-background">
+      {/* Listen for OAuth errors in URL without blocking prerender */}
+      <Suspense fallback={null}>
+        <OAuthErrorListener onError={setError} />
+      </Suspense>
+
       {/* Left Column: Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12 order-2 lg:order-1">
         <div className="w-full max-w-md bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-sm">
