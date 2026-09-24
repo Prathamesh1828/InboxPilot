@@ -36,7 +36,6 @@ function formatAction(action: string | null) {
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [connectionState, setConnectionState] = useState<"Connecting..." | "Live" | "Reconnecting..." | "Offline">("Connecting...");
   
   // Filters State
   const [search, setSearch] = useState("");
@@ -145,15 +144,15 @@ export default function AuditLogsPage() {
     const sse = new EventSource(sseUrl, { withCredentials: true });
 
     sse.onopen = () => {
-      if (mounted) setConnectionState("Live");
+      // Stream established
     };
 
     sse.onerror = () => {
-      if (mounted) setConnectionState("Reconnecting...");
+      // Reconnecting
     };
 
     sse.addEventListener("connected", () => {
-      if (mounted) setConnectionState("Live");
+      // Connection confirmed by server
     });
 
     sse.addEventListener("audit_log", (e) => {
@@ -193,7 +192,6 @@ export default function AuditLogsPage() {
     return () => {
       mounted = false;
       sse.close();
-      setConnectionState("Offline");
     };
   }, [eventTypeFilter, actionFilter, statusFilter, search]);
 
@@ -233,10 +231,6 @@ export default function AuditLogsPage() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
               Audit Logs
-              <Badge variant={connectionState === "Live" ? "default" : "secondary"} className="text-xs transition-colors bg-green-500/10 text-green-600 border-green-500/20 font-normal">
-                {connectionState === "Live" && <span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse" />}
-                {connectionState}
-              </Badge>
             </h1>
             <p className="text-muted-foreground mt-1">Complete history of all automated actions and decisions.</p>
           </div>
