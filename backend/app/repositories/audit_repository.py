@@ -7,6 +7,8 @@ from app.models.audit_event import AuditEvent
 from app.models.email import Email
 import json
 from app.core.redis import redis_client
+from sqlalchemy import or_
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -98,13 +100,45 @@ def get_email_audit_events(db: Session, email_id: int) -> list[AuditEvent]:
     )
 
 
-def get_all_audit_events(db: Session, user_id: str, skip: int = 0, limit: int = 50) -> list[AuditEvent]:
-    return (
+def get_all_audit_events(
+    db: Session, 
+    user_id: str, 
+    skip: int = 0, 
+    limit: int = 50,
+    event_type: str | None = None,
+    action: str | None = None,
+    status: str | None = None,
+    search: str | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+) -> list[AuditEvent]:
+    query = (
         db.query(AuditEvent)
         .join(Email, AuditEvent.email_id == Email.id)
         .filter(Email.user_id == user_id)
-        .order_by(AuditEvent.created_at.desc())
-        .offset(skip)
-        .limit(limit)
-        .all()
     )
+
+    if event_type and event_type != "All":
+        query = query.filter(AuditEvent.event_type == event_type)
+    if action and action != "All":
+        query = query.filter(AuditEvent.action == action)
+    if status and status != "All":
+        query = query.filter(AuditEvent.status == status)
+    if date_from:
+        query = query.filter(AuditEvent.created_at >= date_from)
+    if date_to:
+        query = query.filter(AuditEvent.created_at <= date_to)
+        
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.filter(
+            or_(
+                AuditEvent.event_type.ilike(search_pattern),
+                AuditEvent.action.ilike(search_pattern),
+                AuditEvent.status.ilike(search_pattern),
+                Email.subject.ilike(search_pattern),
+                Email.sender.ilike(search_pattern),
+            )
+        )
+
+    return query.order_by(AuditEvent.created_at.desc()).offset(skip).limit(limit).all()

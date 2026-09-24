@@ -78,9 +78,28 @@ export const emailsApi = {
     apiClient.get<Record<string, unknown>[]>(`/emails/${id}/audit`),
 };
 
+export interface AuditQueryParams {
+  skip?: number;
+  limit?: number;
+  event_type?: string;
+  action?: string;
+  status?: string;
+  search?: string;
+  date_from?: string;
+  date_to?: string;
+}
+
 export const auditApi = {
-  getGlobalAudit: (skip = 0, limit = 50) =>
-    apiClient.get<Record<string, unknown>[]>(`/audit?skip=${skip}&limit=${limit}`),
+  getGlobalAudit: (params: AuditQueryParams = {}) => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        searchParams.append(key, String(value));
+      }
+    });
+    const qs = searchParams.toString();
+    return apiClient.get<Record<string, unknown>[]>(`/audit${qs ? `?${qs}` : ""}`);
+  },
 };
 
 export const dashboardApi = {

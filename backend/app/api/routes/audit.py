@@ -8,6 +8,7 @@ from fastapi.responses import StreamingResponse
 import asyncio
 from app.core.redis import redis_client
 from app.models.user import User
+from datetime import datetime
 
 router = APIRouter(
     prefix="/audit",
@@ -24,13 +25,30 @@ def read_audit_events(
     request: Request,
     skip: int = 0,
     limit: int = 50,
+    event_type: str | None = None,
+    action: str | None = None,
+    status: str | None = None,
+    search: str | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """
     Get all audit events ordered from newest to oldest for the current user.
     """
-    return get_all_audit_events(db=db, user_id=current_user.id, skip=skip, limit=limit)
+    return get_all_audit_events(
+        db=db, 
+        user_id=current_user.id, 
+        skip=skip, 
+        limit=limit,
+        event_type=event_type,
+        action=action,
+        status=status,
+        search=search,
+        date_from=date_from,
+        date_to=date_to,
+    )
 
 @router.get("/stream")
 async def stream_audit_events(
