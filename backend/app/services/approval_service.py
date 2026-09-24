@@ -4,6 +4,10 @@ from app.repositories.action_approval_repository import (
     get_action_approval,
     update_action_approval_status,
 )
+from app.repositories.email_repository import (
+    get_email_by_id,
+    update_email_status,
+)
 from app.repositories.audit_repository import log_audit_event
 
 
@@ -96,6 +100,10 @@ class ApprovalService:
             event_type="APPROVAL_REJECTED",
             action=approval.action,
         )
+        
+        email = get_email_by_id(db, approval.email_id)
+        if email:
+            update_email_status(db, email, "REJECTED")
 
         return (
             f"Approval {approval_id} rejected successfully."

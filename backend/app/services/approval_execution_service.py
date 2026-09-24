@@ -156,6 +156,8 @@ class ApprovalExecutionService:
                 approval_id=approval_id,
                 status="EXECUTION_FAILED",
             )
+            from app.repositories.email_repository import update_email_status
+            update_email_status(db, email, "FAILED")
             raise exc
 
         # ---------------------------------------------
