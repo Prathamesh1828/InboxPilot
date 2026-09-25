@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Sparkles, Calendar, Smartphone, Activity } from "lucide-react";
+import { Sparkles, Calendar, Smartphone, Activity, Lock, ShieldCheck, Database } from "lucide-react";
 
 export function Features() {
   const features = [
@@ -63,6 +63,33 @@ export function Features() {
             </motion.div>
           ))}
         </div>
+
+        {/* Encryption Trust Strip */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="mt-12 max-w-5xl mx-auto"
+        >
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 px-6 py-4 rounded-2xl bg-background border border-border shadow-sm">
+            <div className="flex items-center gap-2 text-green-600">
+              <Lock className="w-4 h-4" />
+              <span className="text-sm font-semibold">AES-256-GCM Encrypted</span>
+            </div>
+            <div className="hidden sm:block w-px h-4 bg-border" />
+            <div className="flex items-center gap-2 text-primary">
+              <Database className="w-4 h-4" />
+              <span className="text-sm text-muted-foreground">Email contents encrypted at rest in database</span>
+            </div>
+            <div className="hidden sm:block w-px h-4 bg-border" />
+            <div className="flex items-center gap-2 text-green-600">
+              <ShieldCheck className="w-4 h-4" />
+              <span className="text-sm text-muted-foreground">Authenticated encryption — tamper-proof</span>
+            </div>
+          </div>
+        </motion.div>
+
       </div>
     </section>
   );

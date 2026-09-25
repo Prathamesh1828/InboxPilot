@@ -87,7 +87,8 @@ def test_production_accepts_valid_config():
         llm_api_key="valid_key",
         llm_fallback_api_key="valid_key",
         telegram_webhook_secret="secret",
-        api_key="valid_api_key"
+        api_key="valid_api_key",
+        email_encryption_key="DWD9LuOYEgmYCFAK_-7z-CWsINGo3XAbsO7ffLaRP30=",  # test key
     )
     s.validate_secrets()
 

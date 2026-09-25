@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ShieldAlert, ShieldCheck, Shield } from "lucide-react";
+import { ShieldAlert, ShieldCheck, Shield, Lock } from "lucide-react";
 
 export function Safety() {
   return (
@@ -52,6 +52,14 @@ export function Safety() {
                 <p className="text-sm text-muted-foreground">Blocked or manually reviewed (e.g., deleting important threads)</p>
               </div>
             </div>
+          </div>
+
+          {/* Encryption Badge */}
+          <div className="mt-8 flex items-center gap-3 px-4 py-3 rounded-xl bg-green-500/5 border border-green-500/20 w-fit">
+            <Lock className="w-4 h-4 text-green-600 flex-shrink-0" />
+            <p className="text-sm text-green-700 font-medium">
+              All email contents encrypted at rest using <span className="font-bold">AES-256-GCM</span>
+            </p>
           </div>
         </motion.div>
 

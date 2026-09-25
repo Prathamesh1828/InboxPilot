@@ -58,9 +58,8 @@ def ingest_inbox_emails(
                 inserted += 1
 
                 logger.info(
-                    "New email ingested: id=%d subject=%s",
+                    "New email ingested: id=%d",
                     email.id,
-                    email.subject,
                 )
 
                 # Send the newly created email to Celery.

@@ -74,6 +74,14 @@ class Settings(BaseSettings):
     telegram_webhook_secret: str = ""
 
     # ============================================================
+    # Email Encryption (AES-256-GCM)
+    # ============================================================
+    # Generate with:
+    #   python -c "import secrets,base64; print(base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())"
+    # Store ONLY in environment/secret manager — never in source code.
+    email_encryption_key: str = ""  # empty = no encryption (dev mode)
+
+    # ============================================================
     # Pydantic Settings Configuration
     # ============================================================
 
@@ -98,6 +106,12 @@ class Settings(BaseSettings):
                 raise ValueError("Google OAuth credentials must be set in production")
             if not self.telegram_webhook_secret:
                 raise ValueError("TELEGRAM_WEBHOOK_SECRET must be set in production")
+            if not self.email_encryption_key:
+                raise ValueError(
+                    "EMAIL_ENCRYPTION_KEY must be set in production. "
+                    "Generate with: python -c \"import secrets,base64; "
+                    "print(base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())\""
+                )
 
 
 settings = Settings()

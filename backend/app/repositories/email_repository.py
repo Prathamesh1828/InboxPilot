@@ -4,17 +4,55 @@ from sqlalchemy.orm import Session
 
 from app.models.email import Email
 from app.schemas.classification import EmailClassification
+from app.security.encryption import (
+    decrypt_email_field,
+    decrypt_email_recipients,
+    encrypt_email_field,
+    encrypt_email_recipients,
+    is_encrypted,
+)
+
+
+
+def decrypt_email(email: Email | None) -> Email | None:
+    """
+    Decrypt all encrypted fields on an Email object IN PLACE and return it.
+    Safe to call on plaintext rows (fields without the v1: prefix pass through unchanged).
+    Returns None if email is None.
+    """
+    if email is None:
+        return None
+    try:
+        email.sender = decrypt_email_field(email.sender) or email.sender
+        email.subject = decrypt_email_field(email.subject)
+        email.body = decrypt_email_field(email.body) or email.body
+        # recipients may be stored as encrypted JSON string or as a real list
+        if isinstance(email.recipients, str):
+            email.recipients = decrypt_email_recipients(email.recipients)
+        elif isinstance(email.recipients, list) and email.recipients:
+            # check if it looks like an encrypted token (shouldn't be, but guard)
+            first = email.recipients[0] if email.recipients else ""
+            if isinstance(first, str) and first.startswith("v1:"):
+                email.recipients = decrypt_email_recipients(first)
+    except Exception as exc:
+        import logging as _logging
+        _logging.getLogger(__name__).error(
+            "Failed to decrypt email id=%s: %s", getattr(email, "id", "?"), type(exc).__name__
+        )
+        raise ValueError("Failed to decrypt email fields.") from exc
+    return email
 
 
 def get_email_by_id(
     db: Session,
     email_id: int,
 ) -> Email | None:
-    return (
+    row = (
         db.query(Email)
         .filter(Email.id == email_id)
         .first()
     )
+    return decrypt_email(row)
 
 
 def get_email_by_provider_message_id(
@@ -44,10 +82,10 @@ def create_email(
     email = Email(
         provider_message_id=provider_message_id,
         thread_id=thread_id,
-        sender=sender,
-        recipients=recipients,
-        subject=subject,
-        body=body,
+        sender=encrypt_email_field(sender) or sender,
+        recipients=encrypt_email_recipients(recipients),   # stored as encrypted JSON string
+        subject=encrypt_email_field(subject),
+        body=encrypt_email_field(body) or body,
         received_at=received_at,
         user_id=user_id,
     )
@@ -174,13 +212,13 @@ def get_pending_emails(
     """
     Return all emails that are waiting for classification.
     """
-
-    return (
+    rows = (
         db.query(Email)
         .filter(Email.status == "PENDING")
         .order_by(Email.id.asc())
         .all()
     )
+    return [e for e in (decrypt_email(r) for r in rows) if e is not None]
 
 def get_emails(
     db: Session,
@@ -188,12 +226,12 @@ def get_emails(
     """
     Return all emails ordered from newest to oldest.
     """
-
-    return (
+    rows = (
         db.query(Email)
         .order_by(Email.created_at.desc())
         .all()
     )
+    return [e for e in (decrypt_email(r) for r in rows) if e is not None]
 
 
 def get_emails_by_user(
@@ -219,8 +257,11 @@ def get_emails_by_user(
 
     query = db.query(Email).filter(Email.user_id == user_id)
 
-    # 1. Search
-    if search:
+    # NOTE: Full-text search on encrypted fields is not possible at the DB layer.
+    # When encryption is active, search is skipped to avoid false negatives.
+    from app.security.encryption import _AESGCM
+    # 1. Search — only possible if email fields are NOT encrypted
+    if search and _AESGCM is None:
         search_term = f"%{search}%"
         query = query.filter(
             or_(
@@ -229,6 +270,9 @@ def get_emails_by_user(
                 Email.body.ilike(search_term),
             )
         )
+    elif search:
+        # When encrypted, we skip DB-level search but will apply post-decryption filter below
+        pass
 
     # 2. Filters
     if category:
@@ -283,7 +327,21 @@ def get_emails_by_user(
     if limit < 1 or limit > 100:
         limit = 50
 
-    items = query.offset((page - 1) * limit).limit(limit).all()
+    items_raw = query.offset((page - 1) * limit).limit(limit).all()
+
+    # Decrypt all items
+    items = [e for e in (decrypt_email(r) for r in items_raw) if e is not None]
+
+    # Post-decryption search filter (only when encryption is active and search was requested)
+    from app.security.encryption import _AESGCM
+    if search and _AESGCM is not None:
+        sl = search.lower()
+        items = [
+            e for e in items
+            if sl in (e.sender or "").lower()
+            or sl in (e.subject or "").lower()
+            or sl in (e.body or "").lower()
+        ]
 
     return items, total_count
 
