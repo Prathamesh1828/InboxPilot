@@ -162,14 +162,28 @@ export function SecuritySettings() {
           <h3 className="text-lg font-medium text-foreground mb-4">Sessions</h3>
           <p className="text-sm text-muted-foreground mb-6">Manage your active sessions.</p>
         </div>
-        <Button 
-          variant="outline" 
-          onClick={handleLogoutAll}
-          disabled={isLoggingOutAll}
-        >
-          {isLoggingOutAll ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <LogOut className="w-4 h-4 mr-2" />}
-          Sign out of all sessions
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="outline" disabled={isLoggingOutAll}>
+              {isLoggingOutAll ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <LogOut className="w-4 h-4 mr-2" />}
+              Sign out of all sessions
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Sign out of all sessions?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will immediately invalidate all active sessions across all devices. You will need to sign in again to access InboxPilot.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleLogoutAll} className="bg-primary text-primary-foreground">
+                Yes, sign me out everywhere
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
       <div className="pt-8 border-t border-border">
@@ -181,7 +195,7 @@ export function SecuritySettings() {
         </div>
         
         <AlertDialog>
-          <AlertDialogTrigger>
+          <AlertDialogTrigger asChild>
             <Button variant="destructive">
               <Trash2 className="w-4 h-4 mr-2" />
               Delete Account

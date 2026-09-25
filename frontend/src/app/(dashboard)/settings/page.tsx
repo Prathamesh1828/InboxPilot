@@ -38,12 +38,9 @@ export default function SettingsPage() {
 
   const tabs = [
     { id: "profile", label: "Profile", icon: User },
-    { id: "notifications", label: "Notifications", icon: Bell },
-    { id: "automation", label: "Automation", icon: Sliders },
     { id: "security", label: "Security", icon: Shield },
-    { id: "appearance", label: "Appearance", icon: Palette },
-    { id: "integrations", label: "Integrations", icon: Plug },
   ];
+
 
   if (isLoading) {
     return (
@@ -82,49 +79,7 @@ export default function SettingsPage() {
 
         <div className="flex-1 bg-card border border-border rounded-xl shadow-sm p-6 lg:p-8 min-h-[400px]">
           {activeTab === "profile" && <ProfileSettings />}
-          {activeTab === "notifications" && settings && (
-            <NotificationSettings 
-              initialSettings={settings} 
-              isTelegramConnected={integrations?.telegram.status === "CONNECTED"} 
-            />
-          )}
-          {activeTab === "automation" && settings && <AutomationSettings initialSettings={settings} />}
           {activeTab === "security" && <SecuritySettings />}
-          {activeTab === "appearance" && settings && <AppearanceSettings initialSettings={settings} />}
-          
-          {activeTab === "integrations" && (
-            <div className="space-y-6 max-w-xl animate-in fade-in duration-300">
-              <div>
-                <h3 className="text-lg font-medium text-foreground mb-4">Connected Services</h3>
-                <p className="text-sm text-muted-foreground mb-6">Manage your external service connections on the Integrations page.</p>
-              </div>
-              <div className="space-y-4">
-                <div className="p-4 bg-secondary/20 border border-border rounded-xl flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Gmail</p>
-                    <p className="text-sm text-muted-foreground">{integrations?.gmail.email || "Not connected"}</p>
-                  </div>
-                  <div className={`text-sm font-medium px-3 py-1 rounded-full ${integrations?.gmail.status === 'CONNECTED' ? 'bg-success/10 text-success' : 'bg-muted-foreground/10 text-muted-foreground'}`}>
-                    {integrations?.gmail.status}
-                  </div>
-                </div>
-                <div className="p-4 bg-secondary/20 border border-border rounded-xl flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">Telegram</p>
-                    <p className="text-sm text-muted-foreground">{integrations?.telegram.status === "CONNECTED" ? "Active" : "Not connected"}</p>
-                  </div>
-                  <div className={`text-sm font-medium px-3 py-1 rounded-full ${integrations?.telegram.status === 'CONNECTED' ? 'bg-success/10 text-success' : 'bg-muted-foreground/10 text-muted-foreground'}`}>
-                    {integrations?.telegram.status}
-                  </div>
-                </div>
-              </div>
-              <div className="pt-6">
-                <Link href="/integrations">
-                  <Button className="w-full sm:w-auto">Manage Integrations</Button>
-                </Link>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>

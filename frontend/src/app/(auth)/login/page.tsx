@@ -160,75 +160,65 @@ export default function LoginPage() {
         <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] xl:w-[500px] h-[300px] xl:h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 right-0 w-[200px] xl:w-[400px] h-[200px] xl:h-[400px] bg-[#FC6C26]/5 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="relative z-10 flex flex-col items-center w-full max-w-[480px] gap-6 xl:gap-8">
-          <img src="/InboxPilot%20Logo%20without%20text.png" alt="InboxPilot" className="h-12 xl:h-16 w-auto object-contain shrink-0" />
+        <div className="relative z-10 flex flex-col items-center justify-center w-full max-w-[480px] h-full">
           
-          {/* Compact Workflow Indicator in place of Headline */}
-          <div className="flex items-center justify-center gap-1.5 sm:gap-3 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground/80 bg-background/50 backdrop-blur-md px-4 py-2 rounded-xl border border-border/50 shadow-sm">
-            <span className="text-foreground">Classify</span>
-            <span>→</span>
-            <span className="text-foreground">Plan</span>
-            <span>→</span>
-            <span className="text-foreground">Approve</span>
-            <span>→</span>
-            <span className="text-foreground">Execute</span>
-          </div>
+          {/* Animated AI Workflow Visualization */}
+          <div className="relative flex items-center justify-center w-[260px] h-[260px] sm:w-[320px] sm:h-[320px] xl:w-[400px] xl:h-[400px]">
+            
+            {/* Orbital path border */}
+            <div className="absolute inset-0 border border-border/30 rounded-full"></div>
+            
+            {/* Outer spinning container */}
+            <div className="absolute inset-0 animate-[spin_40s_linear_infinite] motion-reduce:animate-none flex items-center justify-center">
+              
+              {/* Connecting Lines (Cross pattern) */}
+              <div className="absolute w-full h-[1px] bg-gradient-to-r from-transparent via-border/50 to-transparent"></div>
+              <div className="absolute h-full w-[1px] bg-gradient-to-b from-transparent via-border/50 to-transparent"></div>
 
-          {/* Feature Highlights */}
-          <div className="flex flex-wrap justify-center gap-2 xl:gap-3">
-            <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-border/50 px-3 py-1.5 xl:px-4 xl:py-2 rounded-full shadow-sm">
-              <div className="w-1.5 h-1.5 xl:w-2 xl:h-2 rounded-full bg-primary" />
-              <span className="text-xs xl:text-sm font-medium text-foreground">AI-powered workflows</span>
-            </div>
-            <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-border/50 px-3 py-1.5 xl:px-4 xl:py-2 rounded-full shadow-sm">
-              <div className="w-1.5 h-1.5 xl:w-2 xl:h-2 rounded-full bg-[#FC6C26]" />
-              <span className="text-xs xl:text-sm font-medium text-foreground">Human approval when it matters</span>
-            </div>
-            <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-border/50 px-3 py-1.5 xl:px-4 xl:py-2 rounded-full shadow-sm">
-              <div className="w-1.5 h-1.5 xl:w-2 xl:h-2 rounded-full bg-success" />
-              <span className="text-xs xl:text-sm font-medium text-foreground">Complete audit trail</span>
-            </div>
-          </div>
-
-          {/* Product Preview Card */}
-          <div className="w-full bg-background/70 backdrop-blur-md border border-border/60 rounded-2xl p-4 xl:p-6 shadow-xl relative mt-2">
-            <div className="space-y-3 xl:space-y-4">
-              {/* Activity Item 1 */}
-              <div className="flex gap-3 xl:gap-4 items-start p-3 xl:p-3.5 bg-background rounded-xl border border-border/50 shadow-sm transition-transform hover:-translate-y-0.5">
-                <div className="w-7 h-7 xl:w-8 xl:h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <CheckCircle2 className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs xl:text-sm font-semibold text-foreground truncate">Email classified</p>
-                  <p className="text-[10px] xl:text-xs text-muted-foreground mt-0.5 truncate">Categorized as "Invoice" with 98% confidence.</p>
+              {/* Moving highlight along the line (simulating data transfer) */}
+              <div className="absolute w-1/2 h-[1px] right-0 origin-left animate-pulse bg-gradient-to-r from-transparent to-primary opacity-60"></div>
+              
+              {/* Node 1: Classify */}
+              <div className="absolute top-0 -translate-y-1/2 flex items-center justify-center">
+                <div className="animate-[spin_40s_linear_infinite_reverse] motion-reduce:animate-none bg-background border border-border/80 px-3 py-1.5 xl:px-4 xl:py-2 rounded-full shadow-sm flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary/70" />
+                  <span className="text-[10px] xl:text-xs font-semibold text-foreground uppercase tracking-wider">Classify</span>
                 </div>
               </div>
               
-              {/* Activity Item 2 */}
-              <div className="flex gap-3 xl:gap-4 items-center p-3 xl:p-3.5 bg-background rounded-xl border border-border/50 shadow-sm transition-transform hover:-translate-y-0.5">
-                <div className="w-7 h-7 xl:w-8 xl:h-8 rounded-full bg-warning/10 flex items-center justify-center shrink-0">
-                  <ShieldAlert className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-warning" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs xl:text-sm font-semibold text-foreground truncate">Approval required</p>
-                  <p className="text-[10px] xl:text-xs text-muted-foreground mt-0.5 truncate">Drafted reply to client needs review.</p>
-                </div>
-                <div className="px-2 py-1 xl:px-3 xl:py-1.5 bg-[#FC6C26] text-white text-[9px] xl:text-[10px] font-semibold rounded-md shadow-sm shrink-0">
-                  Review
+              {/* Node 2: Plan */}
+              <div className="absolute right-0 translate-x-1/2 flex items-center justify-center">
+                <div className="animate-[spin_40s_linear_infinite_reverse] motion-reduce:animate-none bg-background border border-border/80 px-3 py-1.5 xl:px-4 xl:py-2 rounded-full shadow-sm flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  <span className="text-[10px] xl:text-xs font-semibold text-foreground uppercase tracking-wider">Plan</span>
                 </div>
               </div>
 
-              {/* Activity Item 3 */}
-              <div className="flex gap-3 xl:gap-4 items-start p-3 xl:p-3.5 bg-background rounded-xl border border-border/50 shadow-sm transition-transform hover:-translate-y-0.5">
-                <div className="w-7 h-7 xl:w-8 xl:h-8 rounded-full bg-success/10 flex items-center justify-center shrink-0">
-                  <ListChecks className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-success" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs xl:text-sm font-semibold text-foreground truncate">Workflow completed</p>
-                  <p className="text-[10px] xl:text-xs text-muted-foreground mt-0.5 truncate">Receipt successfully saved to Google Drive.</p>
+              {/* Node 3: Approve (Orange accent) */}
+              <div className="absolute bottom-0 translate-y-1/2 flex items-center justify-center">
+                <div className="animate-[spin_40s_linear_infinite_reverse] motion-reduce:animate-none bg-background border border-[#FC6C26]/40 px-3 py-1.5 xl:px-4 xl:py-2 rounded-full shadow-sm flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#FC6C26]" />
+                  <span className="text-[10px] xl:text-xs font-semibold text-foreground uppercase tracking-wider">Approve</span>
                 </div>
               </div>
+
+              {/* Node 4: Execute (Success accent) */}
+              <div className="absolute left-0 -translate-x-1/2 flex items-center justify-center">
+                <div className="animate-[spin_40s_linear_infinite_reverse] motion-reduce:animate-none bg-background border border-success/40 px-3 py-1.5 xl:px-4 xl:py-2 rounded-full shadow-sm flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-success" />
+                  <span className="text-[10px] xl:text-xs font-semibold text-foreground uppercase tracking-wider">Execute</span>
+                </div>
+              </div>
+
             </div>
+
+            {/* Central Core */}
+            <div className="relative z-10 w-24 h-24 sm:w-28 sm:h-28 xl:w-32 xl:h-32 bg-background border border-border/80 rounded-full shadow-xl flex items-center justify-center">
+              {/* Inner glowing pulse */}
+              <div className="absolute inset-0 bg-primary/5 rounded-full animate-pulse"></div>
+              <img src="/InboxPilot%20Logo%20without%20text.png" alt="InboxPilot Core" className="h-12 w-12 sm:h-14 sm:w-14 xl:h-16 xl:w-16 object-contain relative z-10" />
+            </div>
+
           </div>
         </div>
       </div>
