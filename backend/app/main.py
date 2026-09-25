@@ -8,6 +8,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from app.core.logging import setup_logging
 from app.core.settings import settings
 from app.api.routes import auth, emails, approvals, telegram, gmail_auth, audit, dashboard, integrations
+from app.api.routes import settings as settings_router
 from app.core.limiter import limiter
 
 setup_logging()
@@ -61,6 +62,7 @@ app.include_router(dashboard.router)
 app.include_router(telegram.router)
 app.include_router(auth.router)
 app.include_router(integrations.router)
+app.include_router(settings_router.router)
 
 
 @app.get("/")

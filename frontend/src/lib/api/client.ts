@@ -56,6 +56,8 @@ export const apiClient = {
     fetchClient<T>(endpoint, { ...options, method: "POST", body: JSON.stringify(body) }),
   put: <T>(endpoint: string, body: unknown, options?: RequestInit) =>
     fetchClient<T>(endpoint, { ...options, method: "PUT", body: JSON.stringify(body) }),
+  patch: <T>(endpoint: string, body: unknown, options?: RequestInit) =>
+    fetchClient<T>(endpoint, { ...options, method: "PATCH", body: JSON.stringify(body) }),
   delete: <T>(endpoint: string, options?: RequestInit) =>
     fetchClient<T>(endpoint, { ...options, method: "DELETE" }),
 };

@@ -6,6 +6,7 @@ from app.models.reminder import Reminder
 from app.models.action_approval import ActionApproval
 from app.models.telegram_connection import TelegramConnection
 from app.models.user import User
+from app.models.user_settings import UserSettings
 
 __all__ = [
     "Base",
@@ -16,4 +17,5 @@ __all__ = [
     "TelegramConnection",
     "GoogleAccount",
     "User",
+    "UserSettings",
 ]

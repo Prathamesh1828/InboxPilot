@@ -9,6 +9,8 @@ interface User {
   name: string;
   email: string;
   is_active: boolean;
+  auth_provider?: string;
+  created_at?: string;
 }
 
 interface AuthContextType {
