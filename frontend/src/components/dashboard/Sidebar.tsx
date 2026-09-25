@@ -33,9 +33,29 @@ export function Sidebar({ isCollapsed = false, onToggleCollapse }: SidebarProps)
   // Using a simple fetch effect to get the pending_approvals for the badge.
 
   useEffect(() => {
-    dashboardApi.getStats()
-      .then(stats => setPendingApprovals(stats.pending_approvals))
-      .catch(console.error);
+    const fetchStats = () => {
+      dashboardApi.getStats()
+        .then(stats => setPendingApprovals(stats.pending_approvals))
+        .catch(console.error);
+    };
+    
+    fetchStats();
+    const intervalId = setInterval(fetchStats, 15000);
+      
+    const handleApprovalsChanged = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      if (customEvent.detail && customEvent.detail.action === 'decrement') {
+        setPendingApprovals(prev => Math.max(0, prev - 1));
+      } else {
+        fetchStats();
+      }
+    };
+    
+    window.addEventListener('approvals_changed', handleApprovalsChanged);
+    return () => {
+      window.removeEventListener('approvals_changed', handleApprovalsChanged);
+      clearInterval(intervalId);
+    };
   }, []);
 
   const navItems = navItemsBase.map(item => 

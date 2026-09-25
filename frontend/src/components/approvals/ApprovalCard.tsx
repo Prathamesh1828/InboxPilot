@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Calendar, ArrowRight, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { motion } from "framer-motion";
 
 export interface ApprovalData {
   id: string;
@@ -22,32 +23,55 @@ export interface ApprovalData {
 
 interface ApprovalCardProps {
   approval: ApprovalData;
-  onApprove: (id: string) => void;
-  onReject: (id: string) => void;
+  onApprove: (id: string) => Promise<void>;
+  onReject: (id: string) => Promise<void>;
+  onRemove: (id: string) => void;
 }
 
-export function ApprovalCard({ approval, onApprove, onReject }: ApprovalCardProps) {
+export function ApprovalCard({ approval, onApprove, onReject, onRemove }: ApprovalCardProps) {
   const [isApproving, setIsApproving] = useState(false);
   const [isRejecting, setIsRejecting] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleApprove = () => {
+  const handleApprove = async () => {
+    if (isApproving || isRejecting || isExiting) return;
     setIsApproving(true);
-    setTimeout(() => {
+    setError(null);
+    try {
+      await onApprove(approval.id);
+      setIsExiting(true);
+      setTimeout(() => onRemove(approval.id), 300);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to approve. Please try again.");
       setIsApproving(false);
-      onApprove(approval.id);
-    }, 800);
+    }
   };
 
-  const handleReject = () => {
+  const handleReject = async () => {
+    if (isApproving || isRejecting || isExiting) return;
     setIsRejecting(true);
-    setTimeout(() => {
+    setError(null);
+    try {
+      await onReject(approval.id);
+      setIsExiting(true);
+      setTimeout(() => onRemove(approval.id), 300);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to reject. Please try again.");
       setIsRejecting(false);
-      onReject(approval.id);
-    }, 800);
+    }
   };
 
   return (
-    <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col hover:-translate-y-1 hover:shadow-md transition-all duration-300">
+    <motion.div
+      layout
+      initial={{ opacity: 1, scale: 1, height: "auto" }}
+      animate={isExiting ? { opacity: 0, scale: 0.95, height: 0, overflow: "hidden", marginTop: 0, marginBottom: 0 } : { opacity: 1, scale: 1, height: "auto" }}
+      transition={{ duration: 0.3 }}
+      className={`bg-card border ${error ? "border-destructive" : "border-border"} rounded-xl shadow-sm flex flex-col hover:-translate-y-1 hover:shadow-md transition-all duration-300 ${isExiting ? "pointer-events-none" : ""}`}
+    >
       <div className="p-5 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -83,33 +107,33 @@ export function ApprovalCard({ approval, onApprove, onReject }: ApprovalCardProp
         </div>
       </div>
 
-      <div className="p-4 border-t border-border bg-background flex items-center justify-between gap-4">
+      <div className="p-4 border-t border-border bg-background flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <Link href={`/inbox/${approval.emailId}`}>
           <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
             View Source Email <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
         </Link>
         <div className="flex items-center gap-2">
+          {error && <span className="text-xs text-destructive mr-2 font-medium">{error}</span>}
           <Button 
             variant="outline" 
             size="sm" 
             onClick={handleReject} 
-            disabled={isApproving || isRejecting}
-            className="border-border hover:bg-destructive/10 text-destructive"
+            disabled={isApproving || isRejecting || isExiting}
+            className="border-border hover:bg-destructive/10 text-destructive w-24"
           >
-            {isRejecting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Reject"}
+            {isRejecting ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Rejecting...</> : "Reject"}
           </Button>
           <Button 
             size="sm" 
             onClick={handleApprove} 
-            disabled={isApproving || isRejecting}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
+            disabled={isApproving || isRejecting || isExiting}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 w-44"
           >
-            {isApproving ? <Loader2 className="w-4 h-4 animate-spin mr-1" /> : null}
-            Approve & Execute
+            {isApproving ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Approving...</> : "Approve & Execute"}
           </Button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

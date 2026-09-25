@@ -38,6 +38,13 @@ export default function ApprovalsPage() {
 
   useEffect(() => {
     fetchApprovals();
+    
+    // Poll for changes made outside the web dashboard (e.g., via Telegram)
+    const intervalId = setInterval(() => {
+      fetchApprovals();
+    }, 15000);
+    
+    return () => clearInterval(intervalId);
   }, [fetchApprovals]);
 
   if (!isReady) {
@@ -58,21 +65,17 @@ export default function ApprovalsPage() {
 
 
   const handleApprove = async (id: string) => {
-    try {
-      await approvalsApi.approve(id);
-      setApprovals(current => current.filter(app => app.id !== id));
-    } catch (error) {
-      console.error("Approval failed:", error);
-    }
+    await approvalsApi.approve(id);
+    window.dispatchEvent(new CustomEvent('approvals_changed', { detail: { action: 'decrement' } }));
   };
 
   const handleReject = async (id: string) => {
-    try {
-      await approvalsApi.reject(id);
-      setApprovals(current => current.filter(app => app.id !== id));
-    } catch (error) {
-      console.error("Rejection failed:", error);
-    }
+    await approvalsApi.reject(id);
+    window.dispatchEvent(new CustomEvent('approvals_changed', { detail: { action: 'decrement' } }));
+  };
+  
+  const handleRemove = (id: string) => {
+    setApprovals(current => current.filter(app => app.id !== id));
   };
 
   return (
@@ -100,6 +103,7 @@ export default function ApprovalsPage() {
               approval={approval} 
               onApprove={handleApprove}
               onReject={handleReject}
+              onRemove={handleRemove}
             />
           ))}
         </div>

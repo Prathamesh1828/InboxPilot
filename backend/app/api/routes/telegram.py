@@ -131,10 +131,11 @@ async def telegram_webhook(
     try:
         if action == "approve":
             ApprovalService.approve(db=db, approval_id=approval_id)
-            ApprovalExecutionService.execute_approved(db=db, approval_id=approval_id)
+            from app.workers.tasks import execute_approved_action
+            execute_approved_action.delay(approval_id=approval_id)
             
-            status_text = "✅ Approved and Executed"
-            alert_text = f"Action {approval_id} approved and executed successfully."
+            status_text = "✅ Approved. Executing..."
+            alert_text = f"Action {approval_id} approved. Execution started."
             
         elif action == "reject":
             ApprovalService.reject(db=db, approval_id=approval_id)

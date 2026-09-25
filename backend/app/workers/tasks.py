@@ -286,3 +286,52 @@ def ingest_all_gmail(self: DatabaseTask) -> dict:
         raise self.retry(exc=exc, countdown=60, max_retries=3)
     finally:
         db.close()
+
+
+@celery_app.task(
+    bind=True,
+    base=DatabaseTask,
+    name="app.workers.tasks.execute_approved_action",
+)
+def execute_approved_action(self: DatabaseTask, approval_id: int) -> dict:
+    from app.services.approval_execution_service import ApprovalExecutionService
+    db = SessionLocal()
+    try:
+        logger.info(
+            "execute_approved_action: started for approval %d",
+            approval_id,
+        )
+        result = ApprovalExecutionService.execute_approved(
+            db=db,
+            approval_id=approval_id,
+        )
+        
+        # We optionally sync telegram status here.
+        from app.api.routes.approvals import _sync_telegram_status
+        _sync_telegram_status(db, approval_id, "✅ Executed successfully")
+
+        logger.info(
+            "execute_approved_action: completed for approval %d",
+            approval_id,
+        )
+        return {
+            "approval_id": approval_id,
+            "status": "EXECUTED",
+            "execution_result": result,
+        }
+    except Exception as exc:
+        logger.error(
+            "execute_approved_action: failed with exception",
+            exc_info=True,
+            extra={
+                "approval_id": approval_id,
+                "error": str(exc),
+            },
+        )
+        
+        from app.api.routes.approvals import _sync_telegram_status
+        _sync_telegram_status(db, approval_id, f"❌ Execution failed: {str(exc)}")
+        
+        raise self.retry(exc=exc, countdown=10, max_retries=3)
+    finally:
+        db.close()

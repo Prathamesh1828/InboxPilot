@@ -146,23 +146,19 @@ def approve_action(
         )
 
         # ---------------------------------------------
-        # 2. Execute approved action
+        # 2. Execute approved action asynchronously
         # ---------------------------------------------
-
-        execution_result = (
-            ApprovalExecutionService.execute_approved(
-                db=db,
-                approval_id=approval_id,
-            )
-        )
         
-        _sync_telegram_status(db, approval_id, "✅ Approved via Web")
+        from app.workers.tasks import execute_approved_action
+        execute_approved_action.delay(approval_id=approval_id)
+
+        _sync_telegram_status(db, approval_id, "✅ Approved via Web. Executing...")
 
         return {
             "approval_id": approval_id,
-            "status": "EXECUTED",
-            "message": "Action approved and executed successfully.",
-            "execution_result": execution_result,
+            "status": "APPROVED",
+            "message": "Action approved successfully. Execution started.",
+            "execution_result": None,
         }
 
     except ValueError as exc:
