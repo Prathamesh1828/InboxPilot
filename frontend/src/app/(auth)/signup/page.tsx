@@ -40,7 +40,7 @@ export default function SignupPage() {
         <div className="w-full max-w-md bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-sm">
           <div className="text-center mb-8">
             <Link href="/">
-              <img src="/InboxPilot%20Logo.png" alt="InboxPilot" className="h-12 w-auto mx-auto object-contain lg:hidden mb-6" />
+              <img src="/InboxPilot%20Logo%20without%20text.png" alt="InboxPilot" className="h-12 w-auto mx-auto object-contain lg:hidden mb-6" />
             </Link>
             <h2 className="text-2xl font-semibold text-foreground">Create an account</h2>
             <p className="mt-2 text-sm text-muted-foreground">Start putting your inbox on autopilot</p>
@@ -151,7 +151,7 @@ export default function SignupPage() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
         
         <div className="relative z-10 flex flex-col items-center">
-          <img src="/InboxPilot%20Logo.png" alt="InboxPilot" className="h-28 w-auto object-contain scale-110 mb-8" />
+          <img src="/InboxPilot%20Logo%20without%20text.png" alt="InboxPilot" className="h-28 w-auto object-contain scale-110 mb-8" />
           <h1 className="text-3xl font-medium text-foreground text-center tracking-tight">Your inbox, on autopilot.</h1>
         </div>
       </div>

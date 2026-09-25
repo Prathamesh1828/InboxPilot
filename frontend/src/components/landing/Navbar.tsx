@@ -54,7 +54,7 @@ export function Navbar() {
         {/* Left: Logo */}
         <div className="flex-1 flex items-center">
           <Link href="#product" onClick={(e) => handleClick(e, "#product")} className="flex items-center space-x-2 shrink-0">
-            <img src="/InboxPilot%20Logo.png" alt="InboxPilot" className="h-14 w-auto object-contain origin-left hover:scale-105 transition-transform" />
+            <img src="/InboxPilot%20Logo%20without%20text.png" alt="InboxPilot" className="h-14 w-auto object-contain origin-left hover:scale-105 transition-transform" />
           </Link>
         </div>
 

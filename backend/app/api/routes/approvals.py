@@ -118,6 +118,7 @@ def approve_action(
     request: Request,
     approval_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Approve a pending action and execute it.
@@ -143,6 +144,7 @@ def approve_action(
         ApprovalService.approve(
             db=db,
             approval_id=approval_id,
+            user_id=current_user.id,
         )
 
         # ---------------------------------------------
@@ -180,6 +182,7 @@ def reject_action(
     request: Request,
     approval_id: int,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """
     Reject a pending action.
@@ -191,6 +194,7 @@ def reject_action(
         message = ApprovalService.reject(
             db=db,
             approval_id=approval_id,
+            user_id=current_user.id,
         )
 
         _sync_telegram_status(db, approval_id, "❌ Rejected via Web")

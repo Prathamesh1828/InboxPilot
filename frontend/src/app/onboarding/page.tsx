@@ -42,7 +42,7 @@ export default function OnboardingPage() {
       {/* Header */}
       <header className="h-24 border-b border-border flex items-center px-8 overflow-hidden">
         <Link href="/" className="flex items-center space-x-2">
-          <img src="/InboxPilot%20Logo.png" alt="InboxPilot" className="h-24 w-auto object-contain shrink-0 scale-125 origin-left" />
+          <img src="/InboxPilot%20Logo%20without%20text.png" alt="InboxPilot" className="h-24 w-auto object-contain shrink-0 scale-125 origin-left" />
         </Link>
       </header>
 

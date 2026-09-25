@@ -21,6 +21,7 @@ class ApprovalService:
     def approve(
         db: Session,
         approval_id: int,
+        user_id: str | None = None,
     ) -> str:
         approval = get_action_approval(
             db=db,
@@ -31,6 +32,11 @@ class ApprovalService:
             raise ValueError(
                 f"Approval {approval_id} not found."
             )
+            
+        if user_id is not None:
+            email = get_email_by_id(db, approval.email_id)
+            if not email or email.user_id != user_id:
+                raise ValueError(f"Approval {approval_id} not found or unauthorized.")
 
         if approval.status not in ("PENDING", "EXECUTION_FAILED"):
             raise ValueError(
@@ -65,6 +71,7 @@ class ApprovalService:
     def reject(
         db: Session,
         approval_id: int,
+        user_id: str | None = None,
     ) -> str:
         approval = get_action_approval(
             db=db,
@@ -75,6 +82,11 @@ class ApprovalService:
             raise ValueError(
                 f"Approval {approval_id} not found."
             )
+            
+        if user_id is not None:
+            email = get_email_by_id(db, approval.email_id)
+            if not email or email.user_id != user_id:
+                raise ValueError(f"Approval {approval_id} not found or unauthorized.")
 
         if approval.status != "PENDING":
             raise ValueError(

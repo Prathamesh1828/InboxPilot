@@ -58,7 +58,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md bg-card border border-border rounded-2xl p-6 sm:p-8 shadow-sm">
           <div className="text-center mb-8">
             <Link href="/">
-              <img src="/InboxPilot%20Logo.png" alt="InboxPilot" className="h-12 w-auto mx-auto object-contain lg:hidden mb-6" />
+              <img src="/InboxPilot%20Logo%20without%20text.png" alt="InboxPilot" className="h-12 w-auto mx-auto object-contain lg:hidden mb-6" />
             </Link>
             <h2 className="text-2xl font-semibold text-foreground">Welcome back</h2>
             <p className="mt-2 text-sm text-muted-foreground">Sign in to your account</p>
@@ -161,7 +161,7 @@ export default function LoginPage() {
         <div className="absolute bottom-0 right-0 w-[200px] xl:w-[400px] h-[200px] xl:h-[400px] bg-[#FC6C26]/5 rounded-full blur-3xl pointer-events-none" />
         
         <div className="relative z-10 flex flex-col items-center w-full max-w-[480px] gap-6 xl:gap-8">
-          <img src="/InboxPilot%20Logo.png" alt="InboxPilot" className="h-12 xl:h-16 w-auto object-contain shrink-0" />
+          <img src="/InboxPilot%20Logo%20without%20text.png" alt="InboxPilot" className="h-12 xl:h-16 w-auto object-contain shrink-0" />
           
           {/* Compact Workflow Indicator in place of Headline */}
           <div className="flex items-center justify-center gap-1.5 sm:gap-3 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground/80 bg-background/50 backdrop-blur-md px-4 py-2 rounded-xl border border-border/50 shadow-sm">

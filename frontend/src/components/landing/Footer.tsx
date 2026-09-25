@@ -8,7 +8,7 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 lg:gap-12">
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center space-x-2">
-              <img src="/InboxPilot%20Logo.png" alt="InboxPilot" className="h-20 w-auto object-contain scale-125 origin-left" />
+              <img src="/InboxPilot%20Logo%20without%20text.png" alt="InboxPilot" className="h-20 w-auto object-contain scale-125 origin-left" />
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs">
               Your inbox, on autopilot. AI-powered email automation platform.
