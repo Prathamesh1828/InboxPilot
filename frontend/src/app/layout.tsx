@@ -3,7 +3,6 @@ import { Outfit } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { SmoothScrolling } from "@/components/SmoothScrolling";
-import { ThemeToggle } from "@/components/ThemeToggle";
 
 const outfit = Outfit({
   subsets: ["latin"],
@@ -25,7 +24,6 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans">
         <SmoothScrolling>
           <AuthProvider>
-            <ThemeToggle />
             {children}
           </AuthProvider>
         </SmoothScrolling>

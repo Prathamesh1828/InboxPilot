@@ -13,28 +13,12 @@ export function AppearanceSettings({ initialSettings }: { initialSettings: UserS
   const handleChange = (key: keyof UserSettings, value: string) => {
     setSettings(prev => ({ ...prev, [key]: value }));
     setHasChanges(true);
-    
-    // Apply theme immediately for preview
-    if (key === "theme") {
-      if (value === "DARK") {
-        document.documentElement.classList.add("dark");
-      } else if (value === "LIGHT") {
-        document.documentElement.classList.remove("dark");
-      } else {
-        if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-          document.documentElement.classList.add("dark");
-        } else {
-          document.documentElement.classList.remove("dark");
-        }
-      }
-    }
   };
 
   const handleSave = async () => {
     try {
       setIsSaving(true);
       await settingsApi.updateSettings({
-        theme: settings.theme,
         density: settings.density,
       });
       toast.success("Appearance preferences saved");
@@ -51,52 +35,9 @@ export function AppearanceSettings({ initialSettings }: { initialSettings: UserS
       <div>
         <h3 className="text-lg font-medium text-foreground mb-4">Appearance</h3>
         <p className="text-sm text-muted-foreground mb-6">Customize the look and feel of your dashboard.</p>
-        
-        <div className="space-y-4">
-          <Label>Theme</Label>
-          <div className="flex flex-wrap gap-4">
-            <button 
-              className="flex flex-col items-center gap-2" 
-              onClick={() => handleChange("theme", "LIGHT")}
-            >
-              <div className={`w-32 h-20 rounded-lg border-2 overflow-hidden flex flex-col transition-all ${settings.theme === "LIGHT" ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/50 bg-[#FFF8DF]"}`}>
-                <div className="h-4 bg-[#FC6C26] w-full" />
-                <div className="flex-1 p-2 bg-[#FFF8DF]">
-                  <div className="w-full h-2 bg-[#5B2361]/20 rounded mb-1.5" />
-                  <div className="w-2/3 h-2 bg-[#5B2361]/20 rounded" />
-                </div>
-              </div>
-              <span className={`text-sm font-medium ${settings.theme === "LIGHT" ? "text-primary" : "text-foreground"}`}>Light</span>
-            </button>
-            <button 
-              className="flex flex-col items-center gap-2" 
-              onClick={() => handleChange("theme", "DARK")}
-            >
-              <div className={`w-32 h-20 rounded-lg border-2 overflow-hidden flex flex-col transition-all ${settings.theme === "DARK" ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/50 bg-[#5B2361]"}`}>
-                <div className="h-4 bg-[#FC6C26] w-full" />
-                <div className="flex-1 p-2 bg-[#5B2361]">
-                  <div className="w-full h-2 bg-[#FFF8DF]/20 rounded mb-1.5" />
-                  <div className="w-2/3 h-2 bg-[#FFF8DF]/20 rounded" />
-                </div>
-              </div>
-              <span className={`text-sm font-medium ${settings.theme === "DARK" ? "text-primary" : "text-foreground"}`}>Dark</span>
-            </button>
-            <button 
-              className="flex flex-col items-center gap-2" 
-              onClick={() => handleChange("theme", "SYSTEM")}
-            >
-              <div className={`w-32 h-20 rounded-lg border-2 overflow-hidden flex flex-col transition-all ${settings.theme === "SYSTEM" ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/50 bg-gradient-to-br from-[#FFF8DF] to-[#5B2361]"}`}>
-                <div className="h-4 bg-[#FC6C26] w-full" />
-                <div className="flex-1 p-2 flex bg-gradient-to-br from-[#FFF8DF] to-[#5B2361]">
-                </div>
-              </div>
-              <span className={`text-sm font-medium ${settings.theme === "SYSTEM" ? "text-primary" : "text-foreground"}`}>System</span>
-            </button>
-          </div>
-        </div>
       </div>
 
-      <div className="pt-8 border-t border-border">
+      <div className="pt-2">
         <div className="space-y-4">
           <Label>Display Density</Label>
           <div className="grid gap-4 md:grid-cols-2">

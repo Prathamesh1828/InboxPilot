@@ -155,83 +155,77 @@ export default function LoginPage() {
       </div>
 
       {/* Right Column: Branding */}
-      <div className="w-full lg:w-1/2 bg-secondary/20 hidden lg:flex flex-col items-center justify-center p-12 order-1 lg:order-2 border-l border-border relative overflow-hidden">
+      <div className="w-full lg:w-1/2 bg-secondary/20 hidden lg:flex flex-col items-center justify-center p-6 lg:p-8 xl:p-12 order-1 lg:order-2 border-l border-border relative overflow-hidden h-screen max-h-screen">
         {/* Subtle decorative glow */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[#FC6C26]/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] xl:w-[500px] h-[300px] xl:h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-[200px] xl:w-[400px] h-[200px] xl:h-[400px] bg-[#FC6C26]/5 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="relative z-10 flex flex-col items-center w-full max-w-lg">
-          <img src="/InboxPilot%20Logo.png" alt="InboxPilot" className="h-16 w-auto object-contain mb-8" />
+        <div className="relative z-10 flex flex-col items-center w-full max-w-[480px] gap-6 xl:gap-8">
+          <img src="/InboxPilot%20Logo.png" alt="InboxPilot" className="h-12 xl:h-16 w-auto object-contain shrink-0" />
           
-          <h1 className="text-4xl font-semibold text-foreground text-center tracking-tight mb-4">
-            Your inbox, on autopilot.
-          </h1>
-          <p className="text-lg text-muted-foreground text-center mb-10 font-medium max-w-md">
-            AI that organizes, plans, and acts — while you stay in control.
-          </p>
+          {/* Compact Workflow Indicator in place of Headline */}
+          <div className="flex items-center justify-center gap-1.5 sm:gap-3 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground/80 bg-background/50 backdrop-blur-md px-4 py-2 rounded-xl border border-border/50 shadow-sm">
+            <span className="text-foreground">Classify</span>
+            <span>→</span>
+            <span className="text-foreground">Plan</span>
+            <span>→</span>
+            <span className="text-foreground">Approve</span>
+            <span>→</span>
+            <span className="text-foreground">Execute</span>
+          </div>
 
           {/* Feature Highlights */}
-          <div className="flex flex-wrap justify-center gap-3 mb-14">
-            <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-border/50 px-4 py-2 rounded-full shadow-sm">
-              <div className="w-2 h-2 rounded-full bg-primary" />
-              <span className="text-sm font-medium text-foreground">AI-powered workflows</span>
+          <div className="flex flex-wrap justify-center gap-2 xl:gap-3">
+            <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-border/50 px-3 py-1.5 xl:px-4 xl:py-2 rounded-full shadow-sm">
+              <div className="w-1.5 h-1.5 xl:w-2 xl:h-2 rounded-full bg-primary" />
+              <span className="text-xs xl:text-sm font-medium text-foreground">AI-powered workflows</span>
             </div>
-            <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-border/50 px-4 py-2 rounded-full shadow-sm">
-              <div className="w-2 h-2 rounded-full bg-[#FC6C26]" />
-              <span className="text-sm font-medium text-foreground">Human approval when it matters</span>
+            <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-border/50 px-3 py-1.5 xl:px-4 xl:py-2 rounded-full shadow-sm">
+              <div className="w-1.5 h-1.5 xl:w-2 xl:h-2 rounded-full bg-[#FC6C26]" />
+              <span className="text-xs xl:text-sm font-medium text-foreground">Human approval when it matters</span>
             </div>
-            <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-border/50 px-4 py-2 rounded-full shadow-sm">
-              <div className="w-2 h-2 rounded-full bg-success" />
-              <span className="text-sm font-medium text-foreground">Complete audit trail</span>
+            <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-border/50 px-3 py-1.5 xl:px-4 xl:py-2 rounded-full shadow-sm">
+              <div className="w-1.5 h-1.5 xl:w-2 xl:h-2 rounded-full bg-success" />
+              <span className="text-xs xl:text-sm font-medium text-foreground">Complete audit trail</span>
             </div>
           </div>
 
           {/* Product Preview Card */}
-          <div className="w-full bg-background/70 backdrop-blur-md border border-border/60 rounded-2xl p-6 shadow-xl relative">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-card text-foreground text-xs font-semibold px-4 py-1.5 rounded-full border border-border shadow-sm flex items-center gap-2">
-              <span>Classify</span>
-              <span className="text-muted-foreground/60">→</span>
-              <span>Plan</span>
-              <span className="text-muted-foreground/60">→</span>
-              <span>Approve</span>
-              <span className="text-muted-foreground/60">→</span>
-              <span>Execute</span>
-            </div>
-            
-            <div className="space-y-4 mt-4">
+          <div className="w-full bg-background/70 backdrop-blur-md border border-border/60 rounded-2xl p-4 xl:p-6 shadow-xl relative mt-2">
+            <div className="space-y-3 xl:space-y-4">
               {/* Activity Item 1 */}
-              <div className="flex gap-4 items-start p-3.5 bg-background rounded-xl border border-border/50 shadow-sm transition-transform hover:-translate-y-0.5">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                  <CheckCircle2 className="w-4 h-4 text-primary" />
+              <div className="flex gap-3 xl:gap-4 items-start p-3 xl:p-3.5 bg-background rounded-xl border border-border/50 shadow-sm transition-transform hover:-translate-y-0.5">
+                <div className="w-7 h-7 xl:w-8 xl:h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-primary" />
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-foreground">Email classified</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Categorized as "Invoice" with 98% confidence.</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs xl:text-sm font-semibold text-foreground truncate">Email classified</p>
+                  <p className="text-[10px] xl:text-xs text-muted-foreground mt-0.5 truncate">Categorized as "Invoice" with 98% confidence.</p>
                 </div>
               </div>
               
               {/* Activity Item 2 */}
-              <div className="flex gap-4 items-center p-3.5 bg-background rounded-xl border border-border/50 shadow-sm transition-transform hover:-translate-y-0.5">
-                <div className="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center shrink-0">
-                  <ShieldAlert className="w-4 h-4 text-warning" />
+              <div className="flex gap-3 xl:gap-4 items-center p-3 xl:p-3.5 bg-background rounded-xl border border-border/50 shadow-sm transition-transform hover:-translate-y-0.5">
+                <div className="w-7 h-7 xl:w-8 xl:h-8 rounded-full bg-warning/10 flex items-center justify-center shrink-0">
+                  <ShieldAlert className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-warning" />
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-foreground">Approval required</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Drafted reply to client needs review.</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs xl:text-sm font-semibold text-foreground truncate">Approval required</p>
+                  <p className="text-[10px] xl:text-xs text-muted-foreground mt-0.5 truncate">Drafted reply to client needs review.</p>
                 </div>
-                <div className="px-3 py-1.5 bg-[#FC6C26] text-white text-[10px] font-semibold rounded-md shadow-sm">
+                <div className="px-2 py-1 xl:px-3 xl:py-1.5 bg-[#FC6C26] text-white text-[9px] xl:text-[10px] font-semibold rounded-md shadow-sm shrink-0">
                   Review
                 </div>
               </div>
 
               {/* Activity Item 3 */}
-              <div className="flex gap-4 items-start p-3.5 bg-background rounded-xl border border-border/50 shadow-sm transition-transform hover:-translate-y-0.5">
-                <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center shrink-0">
-                  <ListChecks className="w-4 h-4 text-success" />
+              <div className="flex gap-3 xl:gap-4 items-start p-3 xl:p-3.5 bg-background rounded-xl border border-border/50 shadow-sm transition-transform hover:-translate-y-0.5">
+                <div className="w-7 h-7 xl:w-8 xl:h-8 rounded-full bg-success/10 flex items-center justify-center shrink-0">
+                  <ListChecks className="w-3.5 h-3.5 xl:w-4 xl:h-4 text-success" />
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-foreground">Workflow completed</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">Receipt successfully saved to Google Drive.</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs xl:text-sm font-semibold text-foreground truncate">Workflow completed</p>
+                  <p className="text-[10px] xl:text-xs text-muted-foreground mt-0.5 truncate">Receipt successfully saved to Google Drive.</p>
                 </div>
               </div>
             </div>
