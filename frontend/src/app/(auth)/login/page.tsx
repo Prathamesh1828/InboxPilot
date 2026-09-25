@@ -8,7 +8,7 @@ import { authApi } from "@/lib/auth-api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, CheckCircle2, ShieldAlert, ListChecks } from "lucide-react";
 
 // Separated into its own component so it can be wrapped in Suspense
 // (required by Next.js when using useSearchParams in a static page)
@@ -157,11 +157,85 @@ export default function LoginPage() {
       {/* Right Column: Branding */}
       <div className="w-full lg:w-1/2 bg-secondary/20 hidden lg:flex flex-col items-center justify-center p-12 order-1 lg:order-2 border-l border-border relative overflow-hidden">
         {/* Subtle decorative glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-[#FC6C26]/5 rounded-full blur-3xl pointer-events-none" />
         
-        <div className="relative z-10 flex flex-col items-center">
-          <img src="/InboxPilot%20Logo.png" alt="InboxPilot" className="h-28 w-auto object-contain scale-110 mb-8" />
-          <h1 className="text-3xl font-medium text-foreground text-center tracking-tight">Your inbox, on autopilot.</h1>
+        <div className="relative z-10 flex flex-col items-center w-full max-w-lg">
+          <img src="/InboxPilot%20Logo.png" alt="InboxPilot" className="h-16 w-auto object-contain mb-8" />
+          
+          <h1 className="text-4xl font-semibold text-foreground text-center tracking-tight mb-4">
+            Your inbox, on autopilot.
+          </h1>
+          <p className="text-lg text-muted-foreground text-center mb-10 font-medium max-w-md">
+            AI that organizes, plans, and acts — while you stay in control.
+          </p>
+
+          {/* Feature Highlights */}
+          <div className="flex flex-wrap justify-center gap-3 mb-14">
+            <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-border/50 px-4 py-2 rounded-full shadow-sm">
+              <div className="w-2 h-2 rounded-full bg-primary" />
+              <span className="text-sm font-medium text-foreground">AI-powered workflows</span>
+            </div>
+            <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-border/50 px-4 py-2 rounded-full shadow-sm">
+              <div className="w-2 h-2 rounded-full bg-[#FC6C26]" />
+              <span className="text-sm font-medium text-foreground">Human approval when it matters</span>
+            </div>
+            <div className="flex items-center gap-2 bg-background/60 backdrop-blur-sm border border-border/50 px-4 py-2 rounded-full shadow-sm">
+              <div className="w-2 h-2 rounded-full bg-success" />
+              <span className="text-sm font-medium text-foreground">Complete audit trail</span>
+            </div>
+          </div>
+
+          {/* Product Preview Card */}
+          <div className="w-full bg-background/70 backdrop-blur-md border border-border/60 rounded-2xl p-6 shadow-xl relative">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-card text-foreground text-xs font-semibold px-4 py-1.5 rounded-full border border-border shadow-sm flex items-center gap-2">
+              <span>Classify</span>
+              <span className="text-muted-foreground/60">→</span>
+              <span>Plan</span>
+              <span className="text-muted-foreground/60">→</span>
+              <span>Approve</span>
+              <span className="text-muted-foreground/60">→</span>
+              <span>Execute</span>
+            </div>
+            
+            <div className="space-y-4 mt-4">
+              {/* Activity Item 1 */}
+              <div className="flex gap-4 items-start p-3.5 bg-background rounded-xl border border-border/50 shadow-sm transition-transform hover:-translate-y-0.5">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <CheckCircle2 className="w-4 h-4 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground">Email classified</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Categorized as "Invoice" with 98% confidence.</p>
+                </div>
+              </div>
+              
+              {/* Activity Item 2 */}
+              <div className="flex gap-4 items-center p-3.5 bg-background rounded-xl border border-border/50 shadow-sm transition-transform hover:-translate-y-0.5">
+                <div className="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center shrink-0">
+                  <ShieldAlert className="w-4 h-4 text-warning" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground">Approval required</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Drafted reply to client needs review.</p>
+                </div>
+                <div className="px-3 py-1.5 bg-[#FC6C26] text-white text-[10px] font-semibold rounded-md shadow-sm">
+                  Review
+                </div>
+              </div>
+
+              {/* Activity Item 3 */}
+              <div className="flex gap-4 items-start p-3.5 bg-background rounded-xl border border-border/50 shadow-sm transition-transform hover:-translate-y-0.5">
+                <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center shrink-0">
+                  <ListChecks className="w-4 h-4 text-success" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-foreground">Workflow completed</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Receipt successfully saved to Google Drive.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
