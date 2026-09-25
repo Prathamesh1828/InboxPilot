@@ -67,11 +67,11 @@ export function Sidebar({ isCollapsed = false, onToggleCollapse }: SidebarProps)
   const sidebarContent = (
     <div className="flex h-full flex-col bg-sidebar border-r border-sidebar-border">
       <div className="flex h-24 shrink-0 items-center justify-center overflow-hidden">
-        <Link href="/dashboard" className="flex items-center justify-center">
+        <Link href="/dashboard" className="flex items-center justify-center w-full h-full">
           {isCollapsed ? (
-            <img src="/InboxPilot%20Logo%20without%20text.png" alt="InboxPilot" className="h-12 w-12 object-cover shrink-0 rounded-full scale-150" />
+            <img src="/InboxPilot%20Logo%20without%20text.png" alt="InboxPilot" className="h-10 w-10 object-contain shrink-0" />
           ) : (
-            <img src="/InboxPilot%20Logo%20without%20text.png" alt="InboxPilot" className="h-24 w-auto object-contain shrink-0 scale-125" />
+            <img src="/InboxPilot%20Logo%20without%20text.png" alt="InboxPilot" className="h-16 w-auto object-contain shrink-0" />
           )}
         </Link>
       </div>
@@ -173,8 +173,8 @@ export function Sidebar({ isCollapsed = false, onToggleCollapse }: SidebarProps)
 
       {/* Mobile Toggle & Header (Visible only on small screens) */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-20 border-b border-sidebar-border bg-background flex items-center justify-between px-4 z-40">
-        <div className="flex items-center space-x-2 overflow-hidden">
-          <img src="/InboxPilot%20Logo%20without%20text.png" alt="InboxPilot" className="h-20 w-auto object-contain shrink-0 scale-125 origin-left" />
+        <div className="flex items-center space-x-2 overflow-hidden h-full">
+          <img src="/InboxPilot%20Logo%20without%20text.png" alt="InboxPilot" className="h-12 w-auto object-contain shrink-0" />
         </div>
         <button
           onClick={() => setIsMobileOpen(true)}

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
+import { usePathname, useRouter } from "next/navigation";
 
 const navItems = [
   { name: "Product", href: "#product" },
@@ -13,8 +14,12 @@ const navItems = [
 
 export function Navbar() {
   const [activeSection, setActiveSection] = useState<string>("product");
+  const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
+    if (pathname !== "/") return; // Only track sections on home page
+
     const handleScroll = () => {
       const sections = ["product", "how-it-works", "features"];
       let current = activeSection;
@@ -35,10 +40,15 @@ export function Navbar() {
     handleScroll(); // Initial check
     
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [activeSection]);
+  }, [activeSection, pathname]);
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
     e.preventDefault();
+    if (pathname !== "/") {
+      router.push(`/${id}`);
+      return;
+    }
+
     const targetId = id.replace("#", "");
     const element = document.getElementById(targetId);
     if (element) {

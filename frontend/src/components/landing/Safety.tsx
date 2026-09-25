@@ -5,7 +5,7 @@ import { ShieldAlert, ShieldCheck, Shield, Lock } from "lucide-react";
 
 export function Safety() {
   return (
-    <section className="container mx-auto px-4 sm:px-8 py-24">
+    <section id="security" className="container mx-auto px-4 sm:px-8 py-24">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
         <motion.div
           initial={{ opacity: 0, x: -30 }}

@@ -71,12 +71,17 @@ def get_dashboard_stats(
     
     recent_activity = []
     seen_email_ids = set()
+    from app.security.encryption import decrypt_email_field
     
     for event, subject, sender, email_status, category in recent_events:
         if event.email_id in seen_email_ids:
             continue
             
         seen_email_ids.add(event.email_id)
+        
+        # Decrypt fields
+        decrypted_subject = decrypt_email_field(subject)
+        decrypted_sender = decrypt_email_field(sender)
         
         # Generate clear, human-readable titles and descriptions
         title = "Email processed"
@@ -110,8 +115,8 @@ def get_dashboard_stats(
             "id": event.id,
             "title": title,
             "description": desc,
-            "email_subject": subject or "(No Subject)",
-            "email_sender": sender,
+            "email_subject": decrypted_subject or "(No Subject)",
+            "email_sender": decrypted_sender,
             "email_category": category,
             "status": event.status or "INFO",
             "email_id": event.email_id,
