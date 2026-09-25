@@ -163,7 +163,7 @@ export function SecuritySettings() {
           <p className="text-sm text-muted-foreground mb-6">Manage your active sessions.</p>
         </div>
         <AlertDialog>
-          <AlertDialogTrigger asChild>
+          <AlertDialogTrigger>
             <Button variant="outline" disabled={isLoggingOutAll}>
               {isLoggingOutAll ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <LogOut className="w-4 h-4 mr-2" />}
               Sign out of all sessions
@@ -195,7 +195,7 @@ export function SecuritySettings() {
         </div>
         
         <AlertDialog>
-          <AlertDialogTrigger asChild>
+          <AlertDialogTrigger>
             <Button variant="destructive">
               <Trash2 className="w-4 h-4 mr-2" />
               Delete Account
