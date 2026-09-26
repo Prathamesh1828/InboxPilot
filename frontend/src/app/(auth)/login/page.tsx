@@ -226,7 +226,7 @@ export default function LoginPage() {
             <div className="flex items-center gap-2 text-muted-foreground/70 bg-background/30 backdrop-blur-md border border-border/30 px-4 py-2 rounded-full shadow-sm">
               <Lock className="w-3.5 h-3.5 text-success" />
               <span className="text-[10px] sm:text-xs font-medium tracking-wide">
-                Secured by AES-256-GCM Encryption
+                All email data is secured and encrypted using AES-256-GCM
               </span>
             </div>
           </div>
