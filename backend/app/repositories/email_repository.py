@@ -364,3 +364,36 @@ def delete_emails_by_user(db: Session, user_id: str) -> int:
     deleted_count = db.query(Email).filter(Email.user_id == user_id).delete()
     db.commit()
     return deleted_count
+
+def delete_old_emails(db: Session, days_old: int = 7) -> int:
+    """
+    Delete emails that are older than X days to save database storage.
+    Since foreign keys do not have CASCADE enabled at the DB level for safety,
+    we must manually delete child records first (audit_events, action_approvals).
+    """
+    from datetime import timedelta
+    from app.models.action_approval import ActionApproval
+    from app.models.audit_event import AuditEvent
+
+    cutoff_date = datetime.now(timezone.utc) - timedelta(days=days_old)
+
+    # 1. Find the IDs of the old emails
+    old_email_ids = [
+        row[0] for row in 
+        db.query(Email.id).filter(Email.created_at < cutoff_date).all()
+    ]
+
+    if not old_email_ids:
+        return 0
+
+    # 2. Delete Audit Events linked to these emails
+    db.query(AuditEvent).filter(AuditEvent.email_id.in_(old_email_ids)).delete(synchronize_session=False)
+
+    # 3. Delete Action Approvals linked to these emails
+    db.query(ActionApproval).filter(ActionApproval.email_id.in_(old_email_ids)).delete(synchronize_session=False)
+
+    # 4. Delete the Emails
+    deleted_emails = db.query(Email).filter(Email.id.in_(old_email_ids)).delete(synchronize_session=False)
+
+    db.commit()
+    return deleted_emails

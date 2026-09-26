@@ -395,3 +395,25 @@ def execute_approved_action(self: DatabaseTask, approval_id: int) -> dict:
         raise self.retry(exc=exc, countdown=10, max_retries=3)
     finally:
         db.close()
+
+@celery_app.task(
+    bind=True,
+    base=DatabaseTask,
+    name="app.workers.tasks.cleanup_old_emails_task",
+)
+def cleanup_old_emails_task(self: DatabaseTask) -> dict:
+    """
+    Periodic task to delete emails older than 7 days to save database storage.
+    """
+    from app.repositories.email_repository import delete_old_emails
+    db = SessionLocal()
+    
+    try:
+        deleted_count = delete_old_emails(db=db, days_old=7)
+        logger.info("cleanup_old_emails_task: successfully deleted %d old emails.", deleted_count)
+        return {"deleted_emails": deleted_count}
+    except Exception as exc:
+        logger.error("cleanup_old_emails_task: failed with exception", exc_info=True)
+        raise self.retry(exc=exc, countdown=60, max_retries=3)
+    finally:
+        db.close()

@@ -1,11 +1,31 @@
 services:
+  # 1. The Web API Server (FastAPI)
   - type: web
     name: inboxpilot-api
     plan: free
     env: python
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    startCommand: celery -A app.workers.celery_app worker --pool=solo --loglevel=info & uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --workers 1
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+
+  # 2. The Background Worker (Celery + Beat)
+  - type: worker
+    name: inboxpilot-worker
+    plan: free
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    # The -B flag runs the Beat scheduler inside the worker, so you don't need a 3rd service!
+    startCommand: celery -A app.workers.celery_app worker -B --pool=solo --loglevel=info --max-tasks-per-child=50
     envVars:
       - key: ENVIRONMENT
         value: production

@@ -1,4 +1,5 @@
 from celery import Celery
+from celery.schedules import crontab
 
 from app.core.settings import settings
 
@@ -31,6 +32,10 @@ celery_app.conf.update(
         "ingest-all-gmail-every-5-minutes": {
             "task": "app.workers.tasks.ingest_all_gmail",
             "schedule": 300.0,  # 5 minutes in seconds
+        },
+        "cleanup-old-emails-daily": {
+            "task": "app.workers.tasks.cleanup_old_emails_task",
+            "schedule": crontab(hour=0, minute=0),  # Run daily at midnight
         },
     },
 )
