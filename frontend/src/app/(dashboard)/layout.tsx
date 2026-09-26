@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sidebar } from "@/components/dashboard/Sidebar";
-
+import { OnboardingWalkthrough } from "@/components/dashboard/OnboardingWalkthrough";
 export default function DashboardLayout({
   children,
 }: {
@@ -39,6 +39,7 @@ export default function DashboardLayout({
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Sidebar isCollapsed={isCollapsed} onToggleCollapse={() => setIsCollapsed(!isCollapsed)} />
+      <OnboardingWalkthrough />
       <div className={`transition-all duration-300 flex flex-col min-h-screen ${isCollapsed ? "lg:pl-20" : "lg:pl-64"}`}>
         <main className="flex-1 py-20 lg:py-8 px-4 sm:px-8 max-w-7xl mx-auto w-full">
           {children}
