@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey
+from sqlalchemy import BigInteger, Column, Integer, String, DateTime, Text, ForeignKey
 
 from app.db.base import Base
 
@@ -25,6 +25,11 @@ class GoogleAccount(Base):
     access_token = Column(Text, nullable=False)
     refresh_token = Column(Text, nullable=True)
     token_expiry = Column(DateTime(timezone=True), nullable=True)
+
+    # Gmail sync checkpoint — stores the Gmail historyId so that
+    # each polling cycle only fetches messages that arrived after
+    # the previous successful sync.
+    last_history_id = Column(BigInteger, nullable=True)
 
     # Timestamps
     created_at = Column(

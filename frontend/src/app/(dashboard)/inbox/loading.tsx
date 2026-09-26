@@ -2,7 +2,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function InboxLoading() {
   return (
-    <div className="space-y-6 h-full flex flex-col max-h-[calc(100vh-4rem)] animate-in fade-in duration-500">
+    <div className="space-y-6 relative animate-in fade-in duration-500">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <Skeleton className="h-9 w-32 mb-2" />
@@ -14,12 +14,12 @@ export default function InboxLoading() {
         </div>
       </div>
 
-      <div className="bg-card border border-border rounded-xl shadow-sm flex-1 overflow-hidden flex flex-col">
+      <div className="bg-card border border-border rounded-xl shadow-sm flex flex-col">
         <div className="px-4 py-3 border-b border-border bg-secondary/10 flex items-center justify-between">
           <Skeleton className="h-4 w-full max-w-sm" />
         </div>
         
-        <div className="overflow-hidden flex-1 divide-y divide-border">
+        <div className="divide-y divide-border">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="flex items-center gap-4 px-4 py-3">
               <Skeleton className="w-2 h-2 rounded-full shrink-0" />

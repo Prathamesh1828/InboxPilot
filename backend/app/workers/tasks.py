@@ -226,6 +226,19 @@ def process_email_pipeline(
             },
         )
 
+        # Mark email as FAILED so it doesn't stay stuck in PENDING
+        try:
+            email_obj = get_email_by_id(db=db, email_id=email_id)
+            if email_obj and email_obj.status in ("PENDING", "PROCESSING"):
+                from app.repositories.email_repository import update_email_status
+                update_email_status(db=db, email=email_obj, status="FAILED")
+                logger.info(
+                    "process_email_pipeline: marked email %d as FAILED",
+                    email_id,
+                )
+        except Exception:
+            pass
+
         raise self.retry(
             exc=exc,
             countdown=10,
@@ -244,46 +257,173 @@ def process_email_pipeline(
 def ingest_all_gmail(self: DatabaseTask) -> dict:
     """
     Periodic task to ingest emails for all connected Google accounts.
+    Uses per-account error isolation so one broken account cannot
+    block ingestion for all others.
     """
     from app.services.email_ingestion import ingest_inbox_emails
+
+    logger.info("[GMAIL_SYNC] cycle_started")
 
     db = SessionLocal()
     total_fetched = 0
     total_inserted = 0
+    total_skipped = 0
     total_failed = 0
-    accounts_processed = 0
+    total_queued = 0
+    accounts_checked = 0
+    accounts_succeeded = 0
+    accounts_failed = 0
 
     try:
-        accounts = db.query(GoogleAccount).all()
+        accounts = db.query(GoogleAccount).filter(
+            GoogleAccount.user_id.isnot(None)
+        ).all()
+
+        logger.info(
+            "[GMAIL_SYNC] checking_connected_accounts count=%d",
+            len(accounts),
+        )
+
         for account in accounts:
+            accounts_checked += 1
+
+            logger.info(
+                "[GMAIL_SYNC] account_checked integration_id=%d",
+                account.id,
+            )
+
             try:
-                result = ingest_inbox_emails(db=db, account=account, max_results=10)
-                total_fetched += result.get("fetched", 0)
-                total_inserted += result.get("inserted", 0)
-                total_failed += result.get("failed", 0)
-                accounts_processed += 1
+                result = ingest_inbox_emails(
+                    db=db,
+                    account=account,
+                    max_results=25,
+                )
+                fetched = result.get("fetched", 0)
+                inserted = result.get("inserted", 0)
+                skipped = result.get("skipped", 0)
+                failed = result.get("failed", 0)
+                queued = result.get("processing_queued", 0)
+
+                total_fetched += fetched
+                total_inserted += inserted
+                total_skipped += skipped
+                total_failed += failed
+                total_queued += queued
+                accounts_succeeded += 1
+
+                logger.info(
+                    "[GMAIL_SYNC] account_synced integration_id=%d "
+                    "fetched=%d inserted=%d skipped=%d failed=%d queued=%d",
+                    account.id,
+                    fetched,
+                    inserted,
+                    skipped,
+                    failed,
+                    queued,
+                )
+
             except Exception as account_exc:
+                accounts_failed += 1
                 logger.error(
-                    "Failed to ingest for account %s: %s",
-                    account.email,
-                    account_exc,
+                    "[GMAIL_SYNC] account_failed integration_id=%d error=%s",
+                    account.id,
+                    type(account_exc).__name__,
                     exc_info=True,
                 )
-                
+
         logger.info(
-            "ingest_all_gmail completed: processed %d accounts, fetched %d, inserted %d, failed %d",
-            accounts_processed, total_fetched, total_inserted, total_failed
+            "[GMAIL_SYNC] cycle_completed "
+            "accounts_checked=%d accounts_succeeded=%d accounts_failed=%d "
+            "messages_fetched=%d messages_inserted=%d "
+            "duplicates_skipped=%d messages_failed=%d "
+            "processing_tasks_queued=%d",
+            accounts_checked,
+            accounts_succeeded,
+            accounts_failed,
+            total_fetched,
+            total_inserted,
+            total_skipped,
+            total_failed,
+            total_queued,
         )
+
         return {
-            "accounts_processed": accounts_processed,
+            "accounts_checked": accounts_checked,
+            "accounts_succeeded": accounts_succeeded,
+            "accounts_failed": accounts_failed,
             "fetched": total_fetched,
             "inserted": total_inserted,
+            "skipped": total_skipped,
             "failed": total_failed,
+            "processing_queued": total_queued,
         }
 
     except Exception as exc:
-        logger.error("ingest_all_gmail: failed with exception", exc_info=True)
+        logger.error(
+            "[GMAIL_SYNC] cycle_failed error=%s",
+            type(exc).__name__,
+            exc_info=True,
+        )
         raise self.retry(exc=exc, countdown=60, max_retries=3)
+    finally:
+        db.close()
+
+
+@celery_app.task(
+    bind=True,
+    base=DatabaseTask,
+    name="app.workers.tasks.ingest_single_gmail",
+)
+def ingest_single_gmail(self: DatabaseTask, user_id: str) -> dict:
+    """
+    On-demand sync for a single user's Gmail account.
+    Triggered by the manual sync endpoint.
+    """
+    from app.services.email_ingestion import ingest_inbox_emails
+
+    logger.info("[GMAIL_SYNC] manual_sync_started user_id=%s", user_id)
+
+    db = SessionLocal()
+
+    try:
+        account = (
+            db.query(GoogleAccount)
+            .filter(GoogleAccount.user_id == user_id)
+            .first()
+        )
+
+        if account is None:
+            logger.warning(
+                "[GMAIL_SYNC] manual_sync: no Google account for user %s",
+                user_id,
+            )
+            return {"error": "No Google account found"}
+
+        result = ingest_inbox_emails(
+            db=db,
+            account=account,
+            max_results=25,
+        )
+
+        logger.info(
+            "[GMAIL_SYNC] manual_sync_completed user_id=%s "
+            "fetched=%d inserted=%d",
+            user_id,
+            result.get("fetched", 0),
+            result.get("inserted", 0),
+        )
+
+        return result
+
+    except Exception as exc:
+        logger.error(
+            "[GMAIL_SYNC] manual_sync_failed user_id=%s error=%s",
+            user_id,
+            type(exc).__name__,
+            exc_info=True,
+        )
+        raise self.retry(exc=exc, countdown=30, max_retries=3)
+
     finally:
         db.close()
 

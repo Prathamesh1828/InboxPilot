@@ -1,4 +1,6 @@
 import base64
+import logging
+from datetime import datetime, timezone
 from email.mime.text import MIMEText
 from typing import Any
 
@@ -11,6 +13,8 @@ from app.core.settings import settings
 from app.models.google_account import GoogleAccount
 from app.integrations.gmail.oauth import GOOGLE_SCOPES
 
+logger = logging.getLogger(__name__)
+
 
 def get_google_credentials(
     db: Session,
@@ -20,8 +24,12 @@ def get_google_credentials(
     Create Google OAuth credentials from the credentials
     stored in the database.
 
-    If the access token has expired, refresh it using the
-    stored refresh token and persist the new access token.
+    If the access token has expired (or is close to expiring),
+    refresh it using the stored refresh token and persist the
+    new access token.
+
+    Raises ``RuntimeError`` with a safe message if the token
+    cannot be refreshed (e.g. revoked by user).
     """
 
     if not account.access_token:
@@ -36,8 +44,27 @@ def get_google_credentials(
         scopes=GOOGLE_SCOPES,
     )
 
-    if credentials.expired and credentials.refresh_token:
-        credentials.refresh(Request())
+    # Always attempt refresh when the token looks expired or
+    # we don't have a reliable expiry time.  The google-auth
+    # `expired` flag only works if the Credentials object was
+    # constructed with an expiry, which we don't do here.
+    needs_refresh = (
+        credentials.expired
+        or account.token_expiry is None
+        or (
+            account.token_expiry is not None
+            and account.token_expiry <= datetime.now(timezone.utc)
+        )
+    )
+
+    if needs_refresh and credentials.refresh_token:
+        try:
+            credentials.refresh(Request())
+        except Exception as refresh_exc:
+            raise RuntimeError(
+                f"Failed to refresh Google token for integration "
+                f"{account.id}: {type(refresh_exc).__name__}"
+            ) from refresh_exc
 
         if not credentials.token:
             raise RuntimeError(

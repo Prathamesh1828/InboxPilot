@@ -1,73 +1,96 @@
 "use client";
 
-import { useEffect, useState } from "react";
-
-export type SSEEvent = 
-  | "EMAIL_RECEIVED" 
-  | "CLASSIFICATION_COMPLETED" 
-  | "PLAN_CREATED" 
-  | "APPROVAL_CREATED" 
-  | "APPROVAL_APPROVED" 
-  | "EXECUTION_STARTED" 
-  | "EXECUTION_COMPLETED" 
-  | "EXECUTION_FAILED";
+import { useEffect, useState, useCallback, useRef } from "react";
+import { API_BASE_URL } from "@/lib/api/client";
 
 export interface InboxEvent {
-  type: SSEEvent;
-  data: unknown;
+  type: string;
+  email_id?: number;
+  status?: string;
   timestamp: Date;
 }
 
-export function useInboxEvents() {
-  const [lastEvent, setLastEvent] = useState<InboxEvent | null>(null);
+/**
+ * Hook that listens to the /integrations/inbox/stream SSE endpoint.
+ * When a new email is ingested by the backend, this fires `onNewEmail`
+ * so the inbox page can auto-refresh without a manual reload.
+ */
+export function useInboxSSE(onNewEmail?: () => void) {
   const [isConnected, setIsConnected] = useState(false);
+  const [lastEvent, setLastEvent] = useState<InboxEvent | null>(null);
+  const callbackRef = useRef(onNewEmail);
+  callbackRef.current = onNewEmail;
 
   useEffect(() => {
-    // Determine the SSE URL based on environment
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-    const sseUrl = `${baseUrl}/events`;
-    
-    let eventSource: EventSource | null = null;
-    let reconnectTimeout: NodeJS.Timeout;
+    const token =
+      typeof window !== "undefined"
+        ? localStorage.getItem("inboxpilot_token")
+        : null;
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    if (!token) return;
+
+    // The SSE endpoint requires auth — pass token as query param
+    // since EventSource doesn't support custom headers.
+    const sseUrl = `${API_BASE_URL}/integrations/inbox/stream?token=${encodeURIComponent(token)}`;
+
+    let eventSource: EventSource | null = null;
+    let reconnectTimeout: ReturnType<typeof setTimeout>;
+    let destroyed = false;
+
     const connect = () => {
+      if (destroyed) return;
+
       try {
         eventSource = new EventSource(sseUrl);
 
-        eventSource.onopen = () => {
+        eventSource.addEventListener("connected", () => {
           setIsConnected(true);
-        };
+        });
 
-        eventSource.onmessage = (event) => {
+        eventSource.addEventListener("inbox_update", (event) => {
           try {
-            const parsedData = JSON.parse(event.data);
-            setLastEvent({
-              type: parsedData.type as SSEEvent,
-              data: parsedData.payload,
+            const data = JSON.parse(event.data);
+            const inboxEvent: InboxEvent = {
+              type: data.type,
+              email_id: data.email_id,
+              status: data.status,
               timestamp: new Date(),
-            });
+            };
+            setLastEvent(inboxEvent);
+
+            // Trigger the refresh callback
+            if (callbackRef.current) {
+              callbackRef.current();
+            }
           } catch (e) {
-            console.error("Failed to parse SSE message", e);
+            console.error("Failed to parse inbox SSE message", e);
           }
-        };
+        });
+
+        eventSource.addEventListener("ping", () => {
+          // Keep-alive, nothing to do
+        });
 
         eventSource.onerror = () => {
           setIsConnected(false);
           eventSource?.close();
-          // Attempt to reconnect after 3 seconds
-          reconnectTimeout = setTimeout(connect, 3000);
+          // Reconnect after 5 seconds
+          if (!destroyed) {
+            reconnectTimeout = setTimeout(connect, 5000);
+          }
         };
-      } catch (_error) {
+      } catch {
         setIsConnected(false);
+        if (!destroyed) {
+          reconnectTimeout = setTimeout(connect, 5000);
+        }
       }
     };
 
-    // In a real scenario, uncomment the connect() call.
-    // For now, since backend might not exist/support SSE yet, we won't connect on mount to avoid infinite errors.
-    // connect();
+    connect();
 
     return () => {
+      destroyed = true;
       if (eventSource) {
         eventSource.close();
       }

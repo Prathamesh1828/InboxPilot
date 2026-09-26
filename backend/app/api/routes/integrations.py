@@ -1,6 +1,11 @@
 import logging
-from fastapi import APIRouter, Depends, HTTPException, status
+import asyncio
+import json
+
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
+
 from app.api.deps import get_db, get_current_user
 from app.models.user import User
 from app.repositories.google_account_repository import get_google_account_by_user, delete_google_account
@@ -51,6 +56,91 @@ def get_integrations_status(
         "telegram": telegram_status,
         "telegram_configured": is_telegram_configured(),
     }
+
+
+@router.post("/gmail/sync")
+def sync_gmail_now(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    Trigger an immediate Gmail sync for the current user.
+
+    This dispatches the same ingestion service used by Celery Beat,
+    ensuring no duplicate ingestion logic exists.
+    """
+    google_account = get_google_account_by_user(db, user.id)
+    if not google_account:
+        raise HTTPException(
+            status_code=400,
+            detail="Gmail not connected. Please connect your Gmail account first.",
+        )
+
+    from app.workers.tasks import ingest_single_gmail
+
+    task = ingest_single_gmail.delay(user.id)
+
+    logger.info(
+        "[GMAIL_SYNC] Manual sync triggered for user %s, task=%s",
+        user.id,
+        task.id,
+    )
+
+    return {
+        "status": "syncing",
+        "message": "Gmail sync has been triggered. New emails will appear shortly.",
+        "task_id": task.id,
+    }
+
+
+@router.get("/inbox/stream")
+async def stream_inbox_events(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Stream real-time inbox events (new emails ingested, processing updates)
+    for the current user using Server-Sent Events (SSE).
+    """
+    async def event_generator():
+        from app.core.redis import redis_client
+
+        pubsub = redis_client.pubsub()
+        channel = f"inbox_events:{current_user.id}"
+        pubsub.subscribe(channel)
+
+        try:
+            yield "event: connected\ndata: {\"status\": \"connected\"}\n\n"
+            loop = asyncio.get_event_loop()
+            last_ping_time = loop.time()
+
+            while True:
+                if await request.is_disconnected():
+                    break
+
+                message = pubsub.get_message(
+                    ignore_subscribe_messages=True, timeout=0
+                )
+                if message and message["type"] == "message":
+                    data = message["data"]
+                    yield f"event: inbox_update\ndata: {data}\n\n"
+                    last_ping_time = loop.time()
+
+                current_time = loop.time()
+                if current_time - last_ping_time > 15:
+                    yield "event: ping\ndata: {\"status\": \"ping\"}\n\n"
+                    last_ping_time = current_time
+
+                await asyncio.sleep(0.5)
+        except Exception:
+            pass
+        finally:
+            pubsub.unsubscribe(channel)
+            pubsub.close()
+
+    return StreamingResponse(
+        event_generator(), media_type="text/event-stream"
+    )
 
 
 @router.post("/gmail/disconnect")
