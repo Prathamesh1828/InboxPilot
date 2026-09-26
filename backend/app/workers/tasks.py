@@ -291,6 +291,66 @@ def ingest_all_gmail(self: DatabaseTask) -> dict:
 @celery_app.task(
     bind=True,
     base=DatabaseTask,
+    name="app.workers.tasks.import_initial_gmail",
+)
+def import_initial_gmail(self: DatabaseTask, user_id: str) -> dict:
+    """
+    One-time task triggered when a user first connects their Gmail account.
+
+    Fetches the 10 most recent emails and stores them with status ``IMPORTED``
+    so the user's inbox is pre-populated.  These emails are NOT sent through
+    the AI pipeline — only genuinely new emails arriving after the initial
+    connection will be classified, planned, and executed.
+    """
+    from app.services.email_ingestion import ingest_inbox_emails
+
+    db = SessionLocal()
+
+    try:
+        account = (
+            db.query(GoogleAccount)
+            .filter(GoogleAccount.user_id == user_id)
+            .first()
+        )
+
+        if account is None:
+            logger.warning(
+                "import_initial_gmail: no Google account found for user %s",
+                user_id,
+            )
+            return {"error": "No Google account found"}
+
+        result = ingest_inbox_emails(
+            db=db,
+            account=account,
+            max_results=10,
+            import_only=True,
+        )
+
+        logger.info(
+            "import_initial_gmail completed for user %s: fetched %d, imported %d",
+            user_id,
+            result.get("fetched", 0),
+            result.get("inserted", 0),
+        )
+
+        return result
+
+    except Exception as exc:
+        logger.error(
+            "import_initial_gmail: failed for user %s",
+            user_id,
+            exc_info=True,
+        )
+        raise self.retry(exc=exc, countdown=30, max_retries=3)
+
+    finally:
+        db.close()
+
+
+@celery_app.task(
+    bind=True,
+    base=DatabaseTask,
     name="app.workers.tasks.execute_approved_action",
 )
 def execute_approved_action(self: DatabaseTask, approval_id: int) -> dict:

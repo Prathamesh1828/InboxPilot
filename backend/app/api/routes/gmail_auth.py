@@ -193,8 +193,9 @@ def gmail_callback(
 
         print(f"Successfully connected Google account for {email} to user {user.id}")
 
-        # Trigger an immediate background ingestion of their inbox
-        from app.workers.tasks import ingest_all_gmail
-        ingest_all_gmail.delay()
+        # Import the user's recent emails (no AI processing) so the
+        # inbox is pre-populated on first visit.
+        from app.workers.tasks import import_initial_gmail
+        import_initial_gmail.delay(str(user.id))
 
         return RedirectResponse(url=f"{settings.frontend_url}/integrations", status_code=302)

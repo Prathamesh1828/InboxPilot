@@ -136,10 +136,6 @@ export function Sidebar({ isCollapsed = false, onToggleCollapse }: SidebarProps)
           {!isCollapsed && (
             <div className="flex-1 truncate">
               <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.name || "User"}</p>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <div className="w-2 h-2 rounded-full bg-success shrink-0" />
-                <p className="text-xs text-sidebar-foreground/60 truncate">System online</p>
-              </div>
             </div>
           )}
           {!isCollapsed ? (

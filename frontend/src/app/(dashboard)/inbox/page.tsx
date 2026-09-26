@@ -261,6 +261,7 @@ export default function InboxPage() {
                       <option value="FAILED">Failed</option>
                       <option value="APPROVAL_PENDING">Approval Pending</option>
                       <option value="EXECUTED">Executed</option>
+                      <option value="IMPORTED">Imported</option>
                     </select>
                   </div>
 

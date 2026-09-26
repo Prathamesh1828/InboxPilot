@@ -17,11 +17,18 @@ def ingest_inbox_emails(
     db: Session,
     account: GoogleAccount,
     max_results: int = 10,
+    import_only: bool = False,
 ) -> dict[str, int]:
     """
     Fetch Inbox messages from Gmail, parse them, store new messages
-    in the database, and queue newly inserted emails for background
-    processing.
+    in the database, and optionally queue newly inserted emails for
+    background processing.
+
+    When ``import_only`` is True the emails are stored with the status
+    ``IMPORTED`` and are **not** sent to the AI processing pipeline.
+    This is used for the initial fetch after connecting a Gmail account
+    so that historical emails populate the inbox without triggering
+    automated actions on stale threads.
 
     Existing messages are skipped using the Gmail provider message ID.
     """
@@ -57,19 +64,30 @@ def ingest_inbox_emails(
             if created:
                 inserted += 1
 
-                logger.info(
-                    "New email ingested: id=%d",
-                    email.id,
-                )
+                if import_only:
+                    # Mark as imported — visible in the inbox but
+                    # will NOT be processed by the AI pipeline.
+                    email.status = "IMPORTED"
+                    db.commit()
 
-                # Send the newly created email to Celery.
-                task = process_email_pipeline.delay(email.id)
+                    logger.info(
+                        "Email imported (no processing): id=%d",
+                        email.id,
+                    )
+                else:
+                    logger.info(
+                        "New email ingested: id=%d",
+                        email.id,
+                    )
 
-                logger.info(
-                    "Celery task queued: email=%d task=%s",
-                    email.id,
-                    task.id,
-                )
+                    # Send the newly created email to Celery.
+                    task = process_email_pipeline.delay(email.id)
+
+                    logger.info(
+                        "Celery task queued: email=%d task=%s",
+                        email.id,
+                        task.id,
+                    )
 
             else:
                 skipped += 1

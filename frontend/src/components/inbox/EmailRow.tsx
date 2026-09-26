@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { motion } from "framer-motion";
 
-export type EmailStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "APPROVAL_PENDING" | "EXECUTED" | "REJECTED";
+export type EmailStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "APPROVAL_PENDING" | "EXECUTED" | "REJECTED" | "IMPORTED";
 export type EmailCategory = "BILL" | "MEETING" | "FORM" | "REMINDER" | "SPAM" | "OTHER";
 
 export interface EmailData {
@@ -43,6 +43,7 @@ const statusColors: Record<string, string> = {
   APPROVAL_PENDING: "bg-orange-500/10 text-orange-600",
   EXECUTED: "bg-green-500/10 text-green-600",
   REJECTED: "bg-red-500/10 text-red-600",
+  IMPORTED: "bg-slate-500/10 text-slate-500",
 };
 
 export function EmailRow({ email }: EmailRowProps) {
