@@ -225,8 +225,8 @@ export default function AuditLogsPage() {
   ].filter(Boolean).length;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 h-full flex flex-col max-h-[calc(100vh-4rem)] relative">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
         <div className="flex items-center gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-foreground flex items-center gap-3">
@@ -373,10 +373,10 @@ export default function AuditLogsPage() {
         </div>
       )}
 
-      <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+      <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+        <div className="overflow-auto flex-1" data-lenis-prevent>
           <table className="w-full text-sm text-left">
-            <thead className="text-xs text-muted-foreground uppercase bg-secondary/10 border-b border-border">
+            <thead className="text-xs text-muted-foreground uppercase bg-secondary/10 border-b border-border sticky top-0 z-10">
               <tr>
                 <th className="px-6 py-4 font-medium text-center">Event</th>
                 <th className="px-6 py-4 font-medium text-center">Action</th>

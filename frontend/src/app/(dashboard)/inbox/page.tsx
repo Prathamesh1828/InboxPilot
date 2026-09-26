@@ -187,7 +187,7 @@ export default function InboxPage() {
   };
 
   return (
-    <div className="space-y-4 relative">
+    <div className="space-y-4 h-full flex flex-col max-h-[calc(100vh-4rem)] relative">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Inbox</h1>
@@ -345,7 +345,7 @@ export default function InboxPage() {
         </div>
       )}
 
-      <div className="bg-card border border-border rounded-xl shadow-sm flex flex-col">
+      <div className="bg-card border border-border rounded-xl shadow-sm flex-1 overflow-hidden flex flex-col min-h-0">
         <div className="px-4 py-3 border-b border-border bg-secondary/10 flex flex-col lg:flex-row lg:items-center gap-2 lg:gap-4 text-xs font-medium text-muted-foreground uppercase tracking-wider shrink-0">
           <div className="flex items-center gap-4 flex-1 min-w-0">
             <div className="w-2 shrink-0 hidden lg:block" />
@@ -388,7 +388,7 @@ export default function InboxPage() {
           </div>
         </div>
         
-        <div>
+        <div className="overflow-y-auto flex-1" data-lenis-prevent>
           {loading ? (
             <div className="divide-y divide-border">
               {[...Array(10)].map((_, i) => (

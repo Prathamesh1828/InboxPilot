@@ -47,7 +47,7 @@ export default function DashboardPage() {
   });
 
   return (
-    <div className="flex flex-col space-y-8">
+    <div className="flex flex-col h-full space-y-8 lg:max-h-[calc(100vh-4rem)]">
       {/* Header */}
       <div className="shrink-0">
         <Greeting />
@@ -93,8 +93,8 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Content Area */}
-      <div className="grid gap-6 md:grid-cols-7 pb-8 lg:pb-0">
-        <div className="md:col-span-4 lg:col-span-5 flex flex-col">
+      <div className="grid gap-6 md:grid-cols-7 flex-1 min-h-0 pb-8 lg:pb-0">
+        <div className="md:col-span-4 lg:col-span-5 flex flex-col min-h-0">
           {isLoading ? (
             <div className="space-y-4">
               <Skeleton className="h-8 w-48 mb-4" />
@@ -107,7 +107,7 @@ export default function DashboardPage() {
           )}
         </div>
         
-        <div className="md:col-span-3 lg:col-span-2 space-y-6">
+        <div className="md:col-span-3 lg:col-span-2 space-y-6 shrink-0 lg:overflow-y-auto">
           {/* System Status */}
           {isLoading ? (
             <Skeleton className="h-[220px] w-full rounded-xl" />

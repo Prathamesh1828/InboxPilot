@@ -29,14 +29,14 @@ const getIcon = (title: string) => {
 
 export function ActivityList({ activities }: ActivityListProps) {
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm flex flex-col">
+    <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm flex flex-col h-full min-h-[400px]">
       <div className="px-6 py-4 border-b border-border bg-secondary/10 flex justify-between items-center shrink-0">
         <h3 className="font-semibold text-foreground">Recent Activity</h3>
         <Link href="/audit" className="text-sm font-medium text-primary hover:underline flex items-center gap-1">
           View all <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>
-      <div className="relative py-2 px-2 sm:px-4">
+      <div className="relative py-2 px-2 sm:px-4 overflow-y-auto flex-1" data-lenis-prevent>
         {activities.length === 0 ? (
           <div className="p-4 text-center text-sm text-muted-foreground">No recent activity</div>
         ) : (
