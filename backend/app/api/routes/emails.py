@@ -158,7 +158,13 @@ def read_email(
                     action_plan["requires_approval"] = event.details.get("requires_approval")
         elif event.event_type == "EXECUTION_COMPLETED":
             if event.details:
-                execution_result = event.details.get("execution_result")
+                res = event.details.get("execution_result")
+                if isinstance(res, str):
+                    execution_result = {"status": res}
+                elif isinstance(res, dict):
+                    execution_result = res
+                else:
+                    execution_result = {"result": str(res)}
         elif event.event_type in ["EXECUTION_FAILED", "GROUNDING_FAILED", "WORKFLOW_FAILED"]:
             if event.details:
                 error_message = event.details.get("error") or str(event.details.get("grounding_errors", ""))
