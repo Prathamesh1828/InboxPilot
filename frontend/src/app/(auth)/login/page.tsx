@@ -151,6 +151,17 @@ export default function LoginPage() {
               </Link>
             </p>
           </div>
+
+          {/* Mobile Encryption Badge */}
+          <div className="mt-8 flex lg:hidden items-center justify-center w-full">
+            <div className="flex items-center gap-1.5 text-muted-foreground/80 bg-secondary/30 border border-border/40 px-3 py-1.5 rounded-full shadow-sm">
+              <Lock className="w-3 h-3 text-success" />
+              <span className="text-[10px] font-medium tracking-wide">
+                All email data is secured and encrypted using AES-256-GCM
+              </span>
+            </div>
+          </div>
+
         </div>
       </div>
 
