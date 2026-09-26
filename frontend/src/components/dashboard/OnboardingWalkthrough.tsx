@@ -234,74 +234,79 @@ export function OnboardingWalkthrough() {
       <div className="absolute inset-0 z-0" onClick={(e) => e.stopPropagation()} />
 
       {/* Card */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={currentStep}
-          initial={{ opacity: 0, y: 10, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -10, scale: 0.98 }}
-          transition={{ duration: 0.3, ease: "easeOut" }}
-          className="absolute z-10 bg-background border border-border shadow-2xl rounded-xl overflow-hidden flex flex-col max-h-[90vh]"
-          style={cardStyle}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card">
-            <h3 className="font-bold text-lg text-foreground">{step.title}</h3>
-            {currentStep < steps.length - 1 && (
-              <button 
-                onClick={completeTour}
-                className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors flex items-center gap-1"
-              >
-                Skip tour <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
-          
-          {/* Content */}
-          <div className="p-6 overflow-y-auto bg-background">
-            {step.content}
-          </div>
-          
-          {/* Footer Navigation */}
-          <div className="px-6 py-4 border-t border-border bg-card flex items-center justify-between">
-            <div className="flex gap-1">
-              {steps.map((_, i) => (
-                <div 
-                  key={i} 
-                  className={`w-2 h-2 rounded-full transition-colors ${i === currentStep ? 'bg-primary' : 'bg-muted-foreground/30'}`}
-                />
-              ))}
-            </div>
-            
-            <div className="flex gap-3">
-              {currentStep > 0 && (
-                <button 
-                  onClick={() => setCurrentStep(prev => prev - 1)}
-                  className="px-4 py-2 text-sm font-medium text-foreground bg-muted hover:bg-border rounded-lg transition-colors flex items-center gap-1"
-                >
-                  <ChevronLeft className="w-4 h-4" /> Back
-                </button>
-              )}
-              
-              {currentStep < steps.length - 1 ? (
-                <button 
-                  onClick={() => setCurrentStep(prev => prev + 1)}
-                  className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-lg transition-colors flex items-center gap-1 shadow-sm"
-                >
-                  Next <ChevronRight className="w-4 h-4" />
-                </button>
-              ) : (
+      <div 
+        className="absolute z-10 pointer-events-none" 
+        style={cardStyle}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, y: 10, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.98 }}
+            transition={{ duration: 0.3, ease: "easeOut" }}
+            className="bg-background border border-border shadow-2xl rounded-xl overflow-hidden flex flex-col max-h-[90vh] pointer-events-auto"
+            style={{ width: "100%" }}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-card">
+              <h3 className="font-bold text-lg text-foreground">{step.title}</h3>
+              {currentStep < steps.length - 1 && (
                 <button 
                   onClick={completeTour}
-                  className="px-6 py-2 text-sm font-bold text-primary-foreground bg-primary hover:bg-primary/90 rounded-lg transition-colors shadow-sm"
+                  className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors flex items-center gap-1"
                 >
-                  Get Started
+                  Skip tour <X className="w-4 h-4" />
                 </button>
               )}
             </div>
-          </div>
-        </motion.div>
-      </AnimatePresence>
+            
+            {/* Content */}
+            <div className="p-6 overflow-y-auto bg-background">
+              {step.content}
+            </div>
+            
+            {/* Footer Navigation */}
+            <div className="px-6 py-4 border-t border-border bg-card flex items-center justify-between">
+              <div className="flex gap-1">
+                {steps.map((_, i) => (
+                  <div 
+                    key={i} 
+                    className={`w-2 h-2 rounded-full transition-colors ${i === currentStep ? 'bg-primary' : 'bg-muted-foreground/30'}`}
+                  />
+                ))}
+              </div>
+              
+              <div className="flex gap-3">
+                {currentStep > 0 && (
+                  <button 
+                    onClick={() => setCurrentStep(prev => prev - 1)}
+                    className="px-4 py-2 text-sm font-medium text-foreground bg-muted hover:bg-border rounded-lg transition-colors flex items-center gap-1"
+                  >
+                    <ChevronLeft className="w-4 h-4" /> Back
+                  </button>
+                )}
+                
+                {currentStep < steps.length - 1 ? (
+                  <button 
+                    onClick={() => setCurrentStep(prev => prev + 1)}
+                    className="px-4 py-2 text-sm font-medium text-primary-foreground bg-primary hover:bg-primary/90 rounded-lg transition-colors flex items-center gap-1 shadow-sm"
+                  >
+                    Next <ChevronRight className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button 
+                    onClick={completeTour}
+                    className="px-6 py-2 text-sm font-bold text-primary-foreground bg-primary hover:bg-primary/90 rounded-lg transition-colors shadow-sm"
+                  >
+                    Get Started
+                  </button>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
