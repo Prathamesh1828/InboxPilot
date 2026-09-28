@@ -83,8 +83,8 @@ def get_celery_ssl_config() -> dict:
         return {}
 
     return {
-        "broker_use_ssl": {"ssl_cert_reqs": "none"},
-        "redis_backend_transport_options": {"ssl_cert_reqs": "none"},
+        "broker_use_ssl": {"ssl_cert_reqs": _ssl.CERT_NONE},
+        "redis_backend_transport_options": {"ssl_cert_reqs": _ssl.CERT_NONE},
     }
 
 
