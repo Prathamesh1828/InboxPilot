@@ -21,10 +21,16 @@ def _get_current_history_id(service: Any) -> str | None:
 def _fetch_message_ids_since_history(
     service: Any,
     start_history_id: int,
-) -> list[str]:
+) -> list[str] | None:
     """
     Use the Gmail History API to find message IDs added since
     `start_history_id`. Returns a deduplicated list of message IDs.
+
+    Returns:
+        list[str]  — message IDs of new messages (may be empty if
+                     no new mail has arrived since the checkpoint).
+        None       — the stored historyId is expired/invalid and the
+                     caller should fall back to a full message list.
     """
     message_ids: set[str] = set()
 
@@ -36,7 +42,6 @@ def _fetch_message_ids_since_history(
                 userId="me",
                 startHistoryId=start_history_id,
                 historyTypes=["messageAdded"],
-                labelId="INBOX",
             )
             .execute()
         )
@@ -60,7 +65,6 @@ def _fetch_message_ids_since_history(
                     userId="me",
                     startHistoryId=start_history_id,
                     historyTypes=["messageAdded"],
-                    labelId="INBOX",
                     pageToken=next_page,
                 )
                 .execute()
@@ -74,7 +78,7 @@ def _fetch_message_ids_since_history(
             logger.warning(
                 "[GMAIL_SYNC] History ID expired, will fall back to full list"
             )
-            return []
+            return None
         raise
 
     return list(message_ids)
@@ -142,10 +146,14 @@ def fetch_inbox_messages(
     max_results: int = 25,
 ) -> tuple[list[dict[str, Any]], str | None]:
     """
-    Fetch new messages from the Gmail Inbox incrementally.
+    Fetch new messages from Gmail incrementally.
 
     Uses the History API when `account.last_history_id` is set,
     otherwise falls back to fetching the most recent messages.
+
+    The History API query does NOT filter by label so that messages
+    arriving in SPAM, Promotions, or other tabs are also captured.
+    Only the initial full-list fallback is scoped to INBOX.
 
     Returns:
         tuple of (messages, new_history_id)
@@ -163,34 +171,32 @@ def fetch_inbox_messages(
     new_history_id = _get_current_history_id(service)
 
     message_ids: list[str] = []
-    used_history = False
 
     if account.last_history_id:
-        message_ids = _fetch_message_ids_since_history(
+        result = _fetch_message_ids_since_history(
             service,
-            account.last_history_id,
+            int(account.last_history_id),
         )
-        if message_ids:
-            used_history = True
+
+        if result is None:
+            # historyId expired — fall back to full message list.
+            message_ids = _fetch_message_ids_full(
+                service, max_results=max_results
+            )
+            logger.info(
+                "[GMAIL_SYNC] Fell back to full list, found %d message(s)",
+                len(message_ids),
+            )
+        elif result:
+            message_ids = result
             logger.info(
                 "[GMAIL_SYNC] History API returned %d new message(s)",
                 len(message_ids),
             )
-        elif not message_ids:
-            # Empty list can mean either "no new messages" (good) or
-            # "historyId expired" (the function logged a warning).
-            # If the historyId was valid, this is just "no new mail".
-            # We still update the checkpoint below.
-            if account.last_history_id:
-                # Try a quick list to see if historyId was simply stale
-                message_ids = _fetch_message_ids_full(
-                    service, max_results=max_results
-                )
-                if message_ids:
-                    logger.info(
-                        "[GMAIL_SYNC] Fell back to full list, found %d message(s)",
-                        len(message_ids),
-                    )
+        else:
+            # Empty list = genuinely no new messages since the last
+            # checkpoint.  This is the normal steady-state path.
+            logger.info("[GMAIL_SYNC] No new messages since last sync")
     else:
         # First sync — no checkpoint yet.
         message_ids = _fetch_message_ids_full(

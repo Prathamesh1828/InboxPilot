@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import BigInteger, Column, Integer, String, DateTime, Text, ForeignKey
+from sqlalchemy import BigInteger, Integer, String, DateTime, Text, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db.base import Base
 
@@ -8,9 +9,9 @@ from app.db.base import Base
 class GoogleAccount(Base):
     __tablename__ = "google_accounts"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
 
-    user_id = Column(
+    user_id: Mapped[str | None] = mapped_column(
         String,
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=True, # temporarily nullable for existing data
@@ -18,27 +19,27 @@ class GoogleAccount(Base):
     )
 
     # Google account information
-    email = Column(String(255), unique=True, nullable=False, index=True)
-    google_user_id = Column(String(255), unique=True, nullable=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    google_user_id: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
 
     # OAuth credentials
-    access_token = Column(Text, nullable=False)
-    refresh_token = Column(Text, nullable=True)
-    token_expiry = Column(DateTime(timezone=True), nullable=True)
+    access_token: Mapped[str] = mapped_column(Text, nullable=False)
+    refresh_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    token_expiry: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     # Gmail sync checkpoint — stores the Gmail historyId so that
     # each polling cycle only fetches messages that arrived after
     # the previous successful sync.
-    last_history_id = Column(BigInteger, nullable=True)
+    last_history_id: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
 
     # Timestamps
-    created_at = Column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
 
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),

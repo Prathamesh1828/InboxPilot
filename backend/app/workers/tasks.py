@@ -262,7 +262,8 @@ def ingest_all_gmail(self: DatabaseTask) -> dict:
     """
     from app.services.email_ingestion import ingest_inbox_emails
 
-    logger.info("[GMAIL_SYNC] cycle_started")
+    logger.info("[GMAIL] Ingestion task started")
+    logger.info("[GMAIL] Checking connected Google accounts")
 
     db = SessionLocal()
     total_fetched = 0
@@ -280,7 +281,7 @@ def ingest_all_gmail(self: DatabaseTask) -> dict:
         ).all()
 
         logger.info(
-            "[GMAIL_SYNC] checking_connected_accounts count=%d",
+            "[GMAIL] Found %d connected Google account(s)",
             len(accounts),
         )
 
@@ -312,7 +313,7 @@ def ingest_all_gmail(self: DatabaseTask) -> dict:
                 accounts_succeeded += 1
 
                 logger.info(
-                    "[GMAIL_SYNC] account_synced integration_id=%d "
+                    "[GMAIL] Account sync completed integration_id=%d "
                     "fetched=%d inserted=%d skipped=%d failed=%d queued=%d",
                     account.id,
                     fetched,
@@ -321,6 +322,11 @@ def ingest_all_gmail(self: DatabaseTask) -> dict:
                     failed,
                     queued,
                 )
+                if inserted > 0:
+                    logger.info(
+                        "[GMAIL] New messages detected: %d",
+                        inserted,
+                    )
 
             except Exception as account_exc:
                 accounts_failed += 1
@@ -332,7 +338,7 @@ def ingest_all_gmail(self: DatabaseTask) -> dict:
                 )
 
         logger.info(
-            "[GMAIL_SYNC] cycle_completed "
+            "[GMAIL] Ingestion task completed "
             "accounts_checked=%d accounts_succeeded=%d accounts_failed=%d "
             "messages_fetched=%d messages_inserted=%d "
             "duplicates_skipped=%d messages_failed=%d "

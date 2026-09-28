@@ -1,7 +1,13 @@
+import logging
+
 from celery import Celery
 from celery.schedules import crontab
+from celery.signals import worker_ready, beat_init
 
 from app.core.settings import settings
+from app.core.redis import get_celery_ssl_config
+
+logger = logging.getLogger(__name__)
 
 celery_app = Celery(
     "inboxpilot",
@@ -40,3 +46,23 @@ celery_app.conf.update(
         },
     },
 )
+
+# Apply TLS configuration when using rediss:// URLs (e.g. Render Key-Value).
+ssl_config = get_celery_ssl_config()
+if ssl_config:
+    celery_app.conf.update(**ssl_config)
+    logger.info("[CELERY] TLS configuration applied for broker and backend")
+
+
+# ---------------------------------------------------------------------------
+# Lifecycle signals — observability for Render logs
+# ---------------------------------------------------------------------------
+
+@worker_ready.connect
+def _on_worker_ready(**kwargs):
+    logger.info("[CELERY] Worker ready — listening for tasks")
+
+
+@beat_init.connect
+def _on_beat_init(**kwargs):
+    logger.info("[CELERY] Beat scheduler started — ingestion cycle scheduled")

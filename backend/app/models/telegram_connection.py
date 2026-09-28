@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy import Integer, String, DateTime, ForeignKey
+from sqlalchemy.orm import relationship, Mapped, mapped_column
 
 from app.db.base import Base
 
@@ -9,9 +9,9 @@ from app.db.base import Base
 class TelegramConnection(Base):
     __tablename__ = "telegram_connections"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
 
-    user_id = Column(
+    user_id: Mapped[str] = mapped_column(
         String,
         ForeignKey("users.id", ondelete="CASCADE"),
         unique=True,
@@ -19,21 +19,21 @@ class TelegramConnection(Base):
         index=True,
     )
 
-    telegram_user_id = Column(String(255), nullable=True)
-    telegram_chat_id = Column(String(255), unique=True, nullable=True, index=True)
+    telegram_user_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    telegram_chat_id: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True, index=True)
 
-    connection_token = Column(String(255), unique=True, nullable=False, index=True)
-    token_expires_at = Column(DateTime(timezone=True), nullable=False)
+    connection_token: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    token_expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
-    connected_at = Column(DateTime(timezone=True), nullable=True)
+    connected_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    created_at = Column(
+    created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         nullable=False,
     )
 
-    updated_at = Column(
+    updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),

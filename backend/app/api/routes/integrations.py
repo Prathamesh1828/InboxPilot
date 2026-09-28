@@ -105,12 +105,24 @@ async def stream_inbox_events(
     async def event_generator():
         from app.core.redis import redis_client
 
-        pubsub = redis_client.pubsub()
         channel = f"inbox_events:{current_user.id}"
-        pubsub.subscribe(channel)
+        pubsub = None
 
         try:
-            yield "event: connected\ndata: {\"status\": \"connected\"}\n\n"
+            pubsub = redis_client.pubsub()
+            pubsub.subscribe(channel)
+        except Exception as conn_exc:
+            logger.error(
+                "[SSE] Redis connection failed for inbox stream: %s",
+                type(conn_exc).__name__,
+            )
+            yield (
+                'event: error\ndata: {"status": "redis_unavailable"}\n\n'
+            )
+            return
+
+        try:
+            yield 'event: connected\ndata: {"status": "connected"}\n\n'
             loop = asyncio.get_event_loop()
             last_ping_time = loop.time()
 
@@ -118,9 +130,14 @@ async def stream_inbox_events(
                 if await request.is_disconnected():
                     break
 
-                message = pubsub.get_message(
-                    ignore_subscribe_messages=True, timeout=0
-                )
+                try:
+                    message = pubsub.get_message(
+                        ignore_subscribe_messages=True, timeout=0
+                    )
+                except Exception:
+                    logger.warning("[SSE] Redis read error in inbox stream")
+                    break
+
                 if message and message["type"] == "message":
                     data = message["data"]
                     yield f"event: inbox_update\ndata: {data}\n\n"
@@ -128,15 +145,19 @@ async def stream_inbox_events(
 
                 current_time = loop.time()
                 if current_time - last_ping_time > 15:
-                    yield "event: ping\ndata: {\"status\": \"ping\"}\n\n"
+                    yield 'event: ping\ndata: {"status": "ping"}\n\n'
                     last_ping_time = current_time
 
                 await asyncio.sleep(0.5)
         except Exception:
             pass
         finally:
-            pubsub.unsubscribe(channel)
-            pubsub.close()
+            if pubsub is not None:
+                try:
+                    pubsub.unsubscribe(channel)
+                    pubsub.close()
+                except Exception:
+                    pass
 
     return StreamingResponse(
         event_generator(), media_type="text/event-stream"
