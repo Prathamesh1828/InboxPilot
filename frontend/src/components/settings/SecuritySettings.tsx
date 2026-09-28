@@ -163,12 +163,14 @@ export function SecuritySettings() {
           <p className="text-sm text-muted-foreground mb-6">Manage your active sessions.</p>
         </div>
         <AlertDialog>
-          <AlertDialogTrigger>
-            <Button variant="outline" disabled={isLoggingOutAll}>
-              {isLoggingOutAll ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <LogOut className="w-4 h-4 mr-2" />}
-              Sign out of all sessions
-            </Button>
-          </AlertDialogTrigger>
+          <AlertDialogTrigger 
+            render={
+              <Button variant="outline" disabled={isLoggingOutAll}>
+                {isLoggingOutAll ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <LogOut className="w-4 h-4 mr-2" />}
+                Sign out of all sessions
+              </Button>
+            }
+          />
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Sign out of all sessions?</AlertDialogTitle>
@@ -195,12 +197,14 @@ export function SecuritySettings() {
         </div>
         
         <AlertDialog>
-          <AlertDialogTrigger>
-            <Button variant="destructive">
-              <Trash2 className="w-4 h-4 mr-2" />
-              Delete Account
-            </Button>
-          </AlertDialogTrigger>
+          <AlertDialogTrigger 
+            render={
+              <Button variant="destructive">
+                <Trash2 className="w-4 h-4 mr-2" />
+                Delete Account
+              </Button>
+            }
+          />
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
