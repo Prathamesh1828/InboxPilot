@@ -144,6 +144,14 @@ export default function InboxPage() {
   // Listen for real-time SSE updates
   useInboxSSE(fetchEmails);
 
+  // Lightweight periodic refresh as fallback
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      fetchEmails();
+    }, 30000); // 30 seconds
+    return () => clearInterval(intervalId);
+  }, [fetchEmails]);
+
   const totalPages = Math.ceil(total / limit) || 1;
 
   const handleSort = (column: string) => {

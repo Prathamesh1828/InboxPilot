@@ -35,10 +35,10 @@ celery_app.conf.update(
 
     # Beat schedule
     beat_schedule={
-        "ingest-all-gmail-every-2-minutes": {
+        "ingest-all-gmail-frequent": {
             "task": "app.workers.tasks.ingest_all_gmail",
-            "schedule": 120.0,  # 2 minutes — safe with incremental History API
-            "options": {"expires": 110},  # expire before next cycle
+            "schedule": 30.0,  # 30 seconds for near real-time ingestion
+            "options": {"expires": 25},  # expire before next cycle
         },
         "cleanup-old-emails-daily": {
             "task": "app.workers.tasks.cleanup_old_emails_task",

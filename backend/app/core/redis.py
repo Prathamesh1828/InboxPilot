@@ -44,8 +44,8 @@ def _build_redis_kwargs(url: str) -> dict:
     if not _is_tls_url(url):
         return {}
 
-    # Use the ssl module constant — works across all redis-py versions.
-    return {"ssl_cert_reqs": _ssl.CERT_NONE}
+    # Use the string 'none' — works across all modern redis-py versions for from_url.
+    return {"ssl_cert_reqs": "none"}
 
 
 # ---------------------------------------------------------------------------
@@ -83,8 +83,8 @@ def get_celery_ssl_config() -> dict:
         return {}
 
     return {
-        "broker_use_ssl": {"ssl_cert_reqs": _ssl.CERT_NONE},
-        "redis_backend_transport_options": {"ssl_cert_reqs": _ssl.CERT_NONE},
+        "broker_use_ssl": {"ssl_cert_reqs": "none"},
+        "redis_backend_transport_options": {"ssl_cert_reqs": "none"},
     }
 
 
