@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Mail, Calendar, Smartphone, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { Mail, Calendar, Smartphone, CheckCircle2, XCircle, Loader2, Lock, Eye, ShieldCheck, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { integrationsApi, IntegrationsResponse, IntegrationStatus } from "@/lib/api/integrations";
@@ -297,6 +297,51 @@ export default function IntegrationsPage() {
           </div>
         </div>
 
+      </div>
+
+      {/* Privacy and Security Section */}
+      <div className="mt-8 bg-card border border-border rounded-xl p-6 sm:p-8 shadow-sm">
+        <div className="max-w-3xl">
+          <h2 className="text-xl font-bold text-foreground mb-2">Your data stays under your control</h2>
+          <p className="text-muted-foreground text-sm leading-relaxed mb-8">
+            InboxPilot only accesses the data and services you connect to, and uses them to perform the actions you authorize. Your emails, calendar events, and Telegram messages are not shared with other users.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+          <div className="space-y-2">
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-3">
+              <Lock className="w-4 h-4" />
+            </div>
+            <h4 className="font-semibold text-foreground text-sm">Secure Connection</h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">Connections use OAuth authentication. Your Google password is never stored by InboxPilot.</p>
+          </div>
+          <div className="space-y-2">
+            <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-500 mb-3">
+              <Eye className="w-4 h-4" />
+            </div>
+            <h4 className="font-semibold text-foreground text-sm">Privacy First</h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">Your emails, calendar events, and messages are private to your account.</p>
+          </div>
+          <div className="space-y-2">
+            <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-500 mb-3">
+              <ShieldCheck className="w-4 h-4" />
+            </div>
+            <h4 className="font-semibold text-foreground text-sm">Human Approval</h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">Actions requiring approval are paused until you explicitly approve them.</p>
+          </div>
+          <div className="space-y-2">
+            <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500 mb-3">
+              <Activity className="w-4 h-4" />
+            </div>
+            <h4 className="font-semibold text-foreground text-sm">Full Visibility</h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">Every automated action is recorded in Audit Logs so you can see what InboxPilot did.</p>
+          </div>
+        </div>
+
+        <div className="pt-6 border-t border-border">
+          <p className="text-xs text-muted-foreground text-center">You can disconnect any integration at any time.</p>
+        </div>
       </div>
     </div>
   );

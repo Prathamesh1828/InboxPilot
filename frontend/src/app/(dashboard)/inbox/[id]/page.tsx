@@ -179,7 +179,7 @@ export default function EmailDetailPage({ params }: { params: Promise<{ id: stri
           <div className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
             <div className="p-6 border-b border-border space-y-4 bg-secondary/10">
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                <h2 className="text-xl font-bold text-foreground leading-tight">
+                <h2 className="text-xl font-bold text-foreground leading-tight break-words overflow-hidden">
                   {email.subject || "(No Subject)"}
                 </h2>
                 
@@ -225,7 +225,7 @@ export default function EmailDetailPage({ params }: { params: Promise<{ id: stri
             </div>
             
             <div className="p-6">
-              <div className="prose prose-sm dark:prose-invert max-w-none text-foreground whitespace-pre-wrap font-sans leading-relaxed">
+              <div className="prose prose-sm dark:prose-invert max-w-none text-foreground whitespace-pre-wrap break-words overflow-hidden font-sans leading-relaxed">
                 {email.body}
               </div>
             </div>
