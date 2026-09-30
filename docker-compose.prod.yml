@@ -57,8 +57,10 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://localhost:8000
     environment:
-      # This tells the frontend container where the backend lives (browser still needs localhost:8000 or your domain)
+      # We still pass it at runtime just in case any server-side logic uses it
       - NEXT_PUBLIC_API_URL=http://localhost:8000
     ports:
       - "3000:3000"

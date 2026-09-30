@@ -1,0 +1,82 @@
+{
+  "artifact": "docs-summary.json",
+  "status": "ready",
+  "phase": "analyze",
+  "targetPath": "C:\\Users\\Pratham\\Downloads\\InboxPilot",
+  "scanRoot": ".",
+  "semantic": {
+    "enabled": false,
+    "backend": "none",
+    "providerEnrichmentSkipped": true,
+    "message": "Semantic enrichment is disabled. This summary preserves document provenance for downstream synthesis."
+  },
+  "detectedDocs": [
+    {
+      "path": "backend/README.md",
+      "fileType": "document",
+      "detectionReason": "extension:.md",
+      "evidence": [
+        "file:backend/README.md"
+      ]
+    },
+    {
+      "path": "frontend/AGENTS.md",
+      "fileType": "document",
+      "detectionReason": "extension:.md",
+      "evidence": [
+        "file:frontend/AGENTS.md"
+      ]
+    },
+    {
+      "path": "frontend/CLAUDE.md",
+      "fileType": "document",
+      "detectionReason": "extension:.md",
+      "evidence": [
+        "file:frontend/CLAUDE.md"
+      ]
+    },
+    {
+      "path": "frontend/README.md",
+      "fileType": "document",
+      "detectionReason": "extension:.md",
+      "evidence": [
+        "file:frontend/README.md"
+      ]
+    }
+  ],
+  "confirmedFacts": {
+    "processedDocuments": [],
+    "skippedDocuments": [],
+    "readmeLikeDocs": [
+      {
+        "path": "backend/README.md",
+        "fileType": "document",
+        "detectionReason": "extension:.md",
+        "evidence": [
+          "file:backend/README.md"
+        ]
+      },
+      {
+        "path": "frontend/README.md",
+        "fileType": "document",
+        "detectionReason": "extension:.md",
+        "evidence": [
+          "file:frontend/README.md"
+        ]
+      }
+    ]
+  },
+  "inferredAlignments": {
+    "docToSubsystem": [],
+    "architectureThemes": [],
+    "unresolvedDocuments": []
+  },
+  "summary": {
+    "detectedDocumentCount": 4,
+    "processedDocumentCount": 0,
+    "skippedDocumentCount": 0,
+    "alignedDocumentCount": 0,
+    "themeCount": 0,
+    "unresolvedDocumentCount": 0
+  }
+}
