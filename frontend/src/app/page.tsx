@@ -4,6 +4,7 @@ import { TrustStrip } from "@/components/landing/TrustStrip";
 import { HowItWorks } from "@/components/landing/HowItWorks";
 import { Features } from "@/components/landing/Features";
 import { Safety } from "@/components/landing/Safety";
+import { FAQ } from "@/components/landing/FAQ";
 import { CTA } from "@/components/landing/CTA";
 import { Footer } from "@/components/landing/Footer";
 
@@ -17,6 +18,7 @@ export default function Home() {
         <HowItWorks />
         <Features />
         <Safety />
+        <FAQ />
         <CTA />
       </main>
       <Footer />

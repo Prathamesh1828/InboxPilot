@@ -1,10 +1,10 @@
-﻿import { Navbar } from "@/components/landing/Navbar";
-import { Footer } from "@/components/landing/Footer";
+import { MinimalHeader } from "@/components/landing/MinimalHeader";
+import { MinimalFooter } from "@/components/landing/MinimalFooter";
 
 export default function About() {
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar />
+      <MinimalHeader />
       <main className="flex-1 container mx-auto px-4 sm:px-8 py-24 max-w-4xl">
         <h1 className="text-4xl font-bold text-foreground mb-8">About InboxPilot</h1>
         
@@ -31,7 +31,7 @@ export default function About() {
           </p>
         </div>
       </main>
-      <Footer />
+      <MinimalFooter />
     </div>
   );
 }
