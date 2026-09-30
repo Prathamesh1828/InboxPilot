@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { WorkflowTimeline, TimelineStep } from "@/components/inbox/WorkflowTimeline";
 import { emailsApi, approvalsApi, EmailDetailData } from "@/lib/api/emails";
 import { formatDistanceToNow } from "date-fns";
+import { formatDisplayLabel } from "@/lib/formatters";
 
 export default function EmailDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -165,7 +166,7 @@ export default function EmailDetailPage({ params }: { params: Promise<{ id: stri
         <div>
           <h1 className="text-2xl font-bold text-foreground">Email Details</h1>
           <p className="text-muted-foreground text-sm flex items-center gap-2">
-            ID: {email.id} • {email.status}
+            ID: {email.id} • {formatDisplayLabel(email.status)}
           </p>
         </div>
       </div>
@@ -247,7 +248,7 @@ export default function EmailDetailPage({ params }: { params: Promise<{ id: stri
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <Badge className="bg-purple-500 hover:bg-purple-600 font-medium px-2.5 py-0.5">
-                        {email.category}
+                        {formatDisplayLabel(email.category)}
                       </Badge>
                       {email.classification_confidence !== null && (
                         <span className="text-sm font-bold text-purple-500">
@@ -256,7 +257,7 @@ export default function EmailDetailPage({ params }: { params: Promise<{ id: stri
                       )}
                     </div>
                     {email.classification_reasoning && (
-                      <div className="bg-secondary/30 rounded-xl p-3 text-sm text-muted-foreground border border-border/50">
+                      <div className="bg-secondary/30 rounded-xl p-3 text-sm text-muted-foreground border border-border/50 whitespace-pre-wrap break-words">
                         {email.classification_reasoning}
                       </div>
                     )}
@@ -358,9 +359,9 @@ export default function EmailDetailPage({ params }: { params: Promise<{ id: stri
                 {email.error_message ? (
                   <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 text-sm text-destructive flex items-start gap-3">
                     <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <p className="font-semibold mb-1">Execution Failed</p>
-                      <p className="opacity-90">{email.error_message}</p>
+                      <p className="opacity-90 whitespace-pre-wrap break-words">{email.error_message}</p>
                     </div>
                   </div>
                 ) : email.execution_result ? (
@@ -369,9 +370,9 @@ export default function EmailDetailPage({ params }: { params: Promise<{ id: stri
                       <CheckCircle2 className="w-4 h-4" /> Action Executed Successfully
                     </div>
                     {Object.entries(email.execution_result).map(([key, value]) => (
-                      <div key={key} className="flex gap-2 text-muted-foreground">
-                        <span className="capitalize">{key.replace(/_/g, " ")}:</span>
-                        <span className="font-medium text-foreground">{String(value)}</span>
+                      <div key={key} className="flex flex-col sm:flex-row gap-1 sm:gap-2 text-muted-foreground min-w-0">
+                        <span className="capitalize shrink-0">{key.replace(/_/g, " ")}:</span>
+                        <span className="font-medium text-foreground whitespace-pre-wrap break-words min-w-0">{String(value)}</span>
                       </div>
                     ))}
                   </div>
@@ -405,7 +406,7 @@ export default function EmailDetailPage({ params }: { params: Promise<{ id: stri
                     email.status === "FAILED" ? "bg-destructive/10 text-destructive border-destructive/20" :
                     "bg-secondary text-foreground"
                  }>
-                   {email.status}
+                   {formatDisplayLabel(email.status)}
                  </Badge>
                </div>
                {email.approval_status && (
@@ -416,7 +417,7 @@ export default function EmailDetailPage({ params }: { params: Promise<{ id: stri
                      email.approval_status === "REJECTED" ? "text-destructive" :
                      "text-orange-500"
                    }`}>
-                     {email.approval_status}
+                     {formatDisplayLabel(email.approval_status)}
                    </span>
                  </div>
                )}

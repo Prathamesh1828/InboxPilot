@@ -10,28 +10,9 @@ import { formatDistanceToNow, subDays } from "date-fns";
 import { auditApi, emailsApi, AuditQueryParams } from "@/lib/api/emails";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatDisplayLabel } from "@/lib/formatters";
 
-function formatEventType(eventType: string) {
-  const mapping: Record<string, string> = {
-    "WORKFLOW_COMPLETED": "Workflow Completed",
-    "EXECUTION_STARTED": "Action Started",
-    "EXECUTION_COMPLETED": "Action Completed",
-    "SAFETY_EVALUATED": "Safety Check",
-    "GROUNDING_PASSED": "Information Verified"
-  };
-  return mapping[eventType] || eventType;
-}
 
-function formatAction(action: string | null) {
-  if (!action) return "-";
-  const mapping: Record<string, string> = {
-    "ARCHIVE": "Archive",
-    "NO_ACTION": "No Action",
-    "DRAFT_REPLY": "Draft Reply",
-    "CREATE_CALENDAR_EVENT": "Add to Calendar",
-  };
-  return mapping[action] || action;
-}
 
 export default function AuditLogsPage() {
   const [logs, setLogs] = useState<any[]>([]);
@@ -348,19 +329,19 @@ export default function AuditLogsPage() {
           <span className="text-sm text-muted-foreground">Active filters:</span>
           {eventTypeFilter !== "All" && (
             <Badge variant="secondary" className="flex items-center gap-1 font-normal bg-secondary">
-              Event: {formatEventType(eventTypeFilter)}
+              Event: {formatDisplayLabel(eventTypeFilter)}
               <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setEventTypeFilter("All")} />
             </Badge>
           )}
           {actionFilter !== "All" && (
             <Badge variant="secondary" className="flex items-center gap-1 font-normal bg-secondary">
-              Action: {formatAction(actionFilter)}
+              Action: {formatDisplayLabel(actionFilter)}
               <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setActionFilter("All")} />
             </Badge>
           )}
           {statusFilter !== "All" && (
             <Badge variant="secondary" className="flex items-center gap-1 font-normal bg-secondary">
-              Status: {statusFilter}
+              Status: {formatDisplayLabel(statusFilter)}
               <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setStatusFilter("All")} />
             </Badge>
           )}
@@ -374,72 +355,71 @@ export default function AuditLogsPage() {
       )}
 
       <div className="bg-card border border-border rounded-xl shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
-        <div className="overflow-auto flex-1" data-lenis-prevent>
-          <table className="w-full text-sm text-left">
-            <thead className="text-xs text-muted-foreground uppercase bg-secondary/10 border-b border-border sticky top-0 z-10">
-              <tr>
-                <th className="px-6 py-4 font-medium text-center">Event</th>
-                <th className="px-6 py-4 font-medium text-center">Action</th>
-                <th className="px-6 py-4 font-medium text-center">Status</th>
-                <th className="px-6 py-4 font-medium text-center">Timestamp</th>
-                <th className="px-6 py-4 font-medium text-center">Details</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {loading ? (
-                [...Array(10)].map((_, i) => (
-                  <tr key={i} className="animate-in fade-in duration-500">
-                    <td className="px-6 py-4 flex justify-center"><Skeleton className="h-5 w-[150px]" /></td>
-                    <td className="px-6 py-4"><div className="flex justify-center"><Skeleton className="h-5 w-[100px]" /></div></td>
-                    <td className="px-6 py-4"><div className="flex justify-center"><Skeleton className="h-6 w-[80px] rounded-full" /></div></td>
-                    <td className="px-6 py-4"><div className="flex justify-center"><Skeleton className="h-5 w-[100px]" /></div></td>
-                    <td className="px-6 py-4"><div className="flex justify-center"><Skeleton className="h-5 w-[80px]" /></div></td>
-                  </tr>
-                ))
-              ) : logs.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
-                    No audit logs found. Try adjusting your filters.
-                  </td>
-                </tr>
-              ) : (
-                logs.map((log) => (
-                  <tr key={log.id} className={`transition-colors duration-1000 ${log.isNew ? 'bg-primary/10' : 'hover:bg-secondary/5'}`}>
-                    <td className="px-6 py-4 text-center">
-                      <span className="font-medium text-foreground">{formatEventType(log.event_type)}</span>
-                    </td>
-                    <td className="px-6 py-4 text-muted-foreground text-center">{formatAction(log.action)}</td>
-                    <td className="px-6 py-4 text-center">
-                      <Badge variant="outline" className={`justify-center w-[100px] ${
-                        log.status === "SUCCESS" || log.status === "Executed" ? "border-green-500/20 text-green-600 bg-green-500/10" :
-                        log.status === "FAILED" ? "border-destructive/20 text-destructive bg-destructive/10" :
-                        "border-yellow-500/20 text-yellow-600 bg-yellow-500/10"
-                      }`}>
-                        {log.status || "INFO"}
-                      </Badge>
-                    </td>
-                    <td className="px-6 py-4 text-muted-foreground whitespace-nowrap text-center" suppressHydrationWarning>
-                      {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      {log.email_id ? (
-                        <Button 
-                          variant="link" 
-                          className="text-primary hover:underline font-medium p-0 h-auto"
-                          onClick={() => handleOpenEmail(log.email_id)}
-                          disabled={openingEmailId === log.email_id}
-                        >
-                          {openingEmailId === log.email_id ? "Opening..." : "View Email"}
-                        </Button>
-                      ) : (
-                        <span className="text-muted-foreground italic text-xs">No email linked</span>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        <div className="px-4 py-3 border-b border-border bg-secondary/10 flex items-center gap-4 text-xs font-medium text-muted-foreground uppercase tracking-wider shrink-0">
+          <div className="flex-1 flex justify-center text-center w-[20%]">Event</div>
+          <div className="flex-1 flex justify-center text-center w-[20%]">Action</div>
+          <div className="flex-1 flex justify-center text-center w-[20%]">Status</div>
+          <div className="flex-1 flex justify-center text-center w-[20%]">Timestamp</div>
+          <div className="flex-1 flex justify-center text-center w-[20%]">Details</div>
+        </div>
+        <div className="overflow-y-auto flex-1" data-lenis-prevent>
+          {loading ? (
+            <div className="divide-y divide-border">
+              {[...Array(10)].map((_, i) => (
+                <div key={i} className="px-4 py-4 flex items-center gap-4 animate-in fade-in duration-500">
+                  <div className="flex-1 flex justify-center"><Skeleton className="h-5 w-[150px]" /></div>
+                  <div className="flex-1 flex justify-center"><Skeleton className="h-5 w-[100px]" /></div>
+                  <div className="flex-1 flex justify-center"><Skeleton className="h-6 w-[80px] rounded-full" /></div>
+                  <div className="flex-1 flex justify-center"><Skeleton className="h-5 w-[100px]" /></div>
+                  <div className="flex-1 flex justify-center"><Skeleton className="h-5 w-[80px]" /></div>
+                </div>
+              ))}
+            </div>
+          ) : logs.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+              <p className="text-lg font-medium text-foreground">No audit logs found.</p>
+              <p>Try adjusting your filters.</p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {logs.map((log) => (
+                <div key={log.id} className={`px-4 py-4 flex items-center gap-4 transition-colors duration-1000 ${log.isNew ? 'bg-primary/10' : 'hover:bg-secondary/5'}`}>
+                  <div className="flex-1 flex justify-center text-center">
+                    <span className="font-medium text-foreground">{formatDisplayLabel(log.event_type)}</span>
+                  </div>
+                  <div className="flex-1 flex justify-center text-center text-muted-foreground">
+                    {formatDisplayLabel(log.action) || "-"}
+                  </div>
+                  <div className="flex-1 flex justify-center text-center">
+                    <Badge variant="outline" className={`justify-center w-[100px] ${
+                      log.status === "SUCCESS" || log.status === "Executed" ? "border-green-500/20 text-green-600 bg-green-500/10" :
+                      log.status === "FAILED" ? "border-destructive/20 text-destructive bg-destructive/10" :
+                      "border-yellow-500/20 text-yellow-600 bg-yellow-500/10"
+                    }`}>
+                      {formatDisplayLabel(log.status || "INFO")}
+                    </Badge>
+                  </div>
+                  <div className="flex-1 flex justify-center text-center text-muted-foreground whitespace-nowrap" suppressHydrationWarning>
+                    {formatDistanceToNow(new Date(log.created_at), { addSuffix: true })}
+                  </div>
+                  <div className="flex-1 flex justify-center text-center">
+                    {log.email_id ? (
+                      <Button 
+                        variant="link" 
+                        className="text-primary hover:underline font-medium p-0 h-auto"
+                        onClick={() => handleOpenEmail(log.email_id)}
+                        disabled={openingEmailId === log.email_id}
+                      >
+                        {openingEmailId === log.email_id ? "Opening..." : "View Email"}
+                      </Button>
+                    ) : (
+                      <span className="text-muted-foreground italic text-xs">No email linked</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

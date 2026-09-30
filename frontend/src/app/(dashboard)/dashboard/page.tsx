@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Greeting } from "@/components/dashboard/Greeting";
 import Link from "next/link";
 import { dashboardApi, DashboardStats } from "@/lib/api/emails";
+import { formatDisplayLabel } from "@/lib/formatters";
 
 export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
@@ -136,7 +137,7 @@ export default function DashboardPage() {
                       ) : (
                         <span className="w-2 h-2 rounded-full bg-muted-foreground relative" />
                       )}
-                      {service.status}
+                      {formatDisplayLabel(service.status)}
                     </span>
                   </div>
                 );

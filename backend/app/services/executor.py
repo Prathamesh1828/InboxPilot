@@ -69,6 +69,7 @@ class ActionExecutor:
             return self._create_calendar_event(
                 plan=plan,
                 db=db,
+                email_id=email_id,
             )
 
         if isinstance(plan, DraftReplyActionPlan):
@@ -229,11 +230,27 @@ class ActionExecutor:
     def _create_calendar_event(
         plan: CalendarActionPlan,
         db: Session | None,
+        email_id: int | None,
     ) -> str:
 
         if db is None:
             raise ValueError(
                 "Database session is required to create a calendar event."
+            )
+
+        if email_id is None:
+            raise ValueError(
+                "Email ID is required to create a calendar event."
+            )
+
+        email = get_email_by_id(
+            db=db,
+            email_id=email_id,
+        )
+
+        if email is None:
+            raise ValueError(
+                f"Email {email_id} not found."
             )
 
         parameters = plan.parameters

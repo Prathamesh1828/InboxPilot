@@ -51,20 +51,20 @@ export function WorkflowTimeline({ steps }: WorkflowTimelineProps) {
               {getIcon(step.title, step.status)}
             </div>
             
-            <div className="flex-1 pt-1.5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
+            <div className="flex-1 min-w-0 pt-1.5">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1 mb-1">
                 <h4 className={`text-sm font-semibold ${isFailed ? "text-destructive" : "text-foreground"}`}>
                   {formatTitle(step.title)}
                 </h4>
                 {step.timestamp && (
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap sm:ml-2">
                     {new Date(step.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                   </span>
                 )}
               </div>
               
               {step.description && (
-                <p className="text-sm text-muted-foreground">{step.description}</p>
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap break-words">{step.description}</p>
               )}
             </div>
           </div>

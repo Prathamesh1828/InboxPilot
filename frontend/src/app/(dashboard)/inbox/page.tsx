@@ -8,7 +8,7 @@ import { EmailRow, EmailData } from "@/components/inbox/EmailRow";
 import { Skeleton } from "@/components/ui/skeleton";
 import { emailsApi, EmailQueryParams } from "@/lib/api/emails";
 import { useInboxSSE } from "@/hooks/useInboxEvents";
-
+import { formatDisplayLabel } from "@/lib/formatters";
 export default function InboxPage() {
   const [emails, setEmails] = useState<EmailData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -328,13 +328,13 @@ export default function InboxPage() {
         <div className="flex flex-wrap gap-2 shrink-0">
           {category && (
             <span className="inline-flex items-center gap-1 bg-secondary px-2 py-1 rounded-full text-xs font-medium border border-border">
-              Category: {category}
+              Category: {formatDisplayLabel(category)}
               <button onClick={() => { setCategory(""); setPage(1); }} className="hover:text-foreground text-muted-foreground"><X className="w-3 h-3" /></button>
             </span>
           )}
           {status && (
             <span className="inline-flex items-center gap-1 bg-secondary px-2 py-1 rounded-full text-xs font-medium border border-border">
-              Status: {status}
+              Status: {formatDisplayLabel(status)}
               <button onClick={() => { setStatus(""); setPage(1); }} className="hover:text-foreground text-muted-foreground"><X className="w-3 h-3" /></button>
             </span>
           )}

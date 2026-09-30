@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { ShieldCheck, Calendar, ArrowRight, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { motion } from "framer-motion";
+import { formatDisplayLabel } from "@/lib/formatters";
 
 export interface ApprovalData {
   id: string;
@@ -76,13 +77,13 @@ export function ApprovalCard({ approval, onApprove, onReject, onRemove }: Approv
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Calendar className="w-5 h-5 text-primary" />
-            <h3 className="font-semibold text-lg text-foreground">{approval.action}</h3>
+            <h3 className="font-semibold text-lg text-foreground">{formatDisplayLabel(approval.action)}</h3>
           </div>
           <div className="mb-2">
             <p className="text-sm font-medium text-foreground">{approval.emailSubject}</p>
             <p className="text-xs text-muted-foreground">From: {approval.emailSender}</p>
           </div>
-          <p className="text-sm text-muted-foreground line-clamp-2">{approval.reasoning}</p>
+          <p className="text-sm text-muted-foreground line-clamp-2 break-words whitespace-pre-wrap">{approval.reasoning}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <Badge variant="outline" className="border-orange-500/20 bg-orange-500/10 text-orange-500">

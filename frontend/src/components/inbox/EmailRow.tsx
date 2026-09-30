@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
 import { motion } from "framer-motion";
+import { formatDisplayLabel } from "@/lib/formatters";
 
 export type EmailStatus = "PENDING" | "PROCESSING" | "COMPLETED" | "FAILED" | "APPROVAL_PENDING" | "EXECUTED" | "REJECTED" | "IMPORTED";
 export type EmailCategory = "BILL" | "MEETING" | "FORM" | "REMINDER" | "SPAM" | "OTHER";
@@ -97,13 +98,13 @@ export function EmailRow({ email }: EmailRowProps) {
       <div className="flex items-center justify-between lg:justify-end gap-2 lg:gap-4 w-full lg:w-[380px] shrink-0 mt-2 lg:mt-0">
         <div className="flex items-center gap-2 lg:w-[260px] lg:justify-start shrink-0">
           <Badge variant="outline" className={`text-[10px] uppercase font-bold tracking-wider lg:w-[70px] justify-center ${email.category ? (categoryColors[email.category] || categoryColors.OTHER) : "text-muted-foreground border-border/50 bg-transparent"}`}>
-            {email.category || "--"}
+            {formatDisplayLabel(email.category) || "--"}
           </Badge>
           <span className="text-xs text-muted-foreground font-medium w-auto lg:w-[60px] text-center inline-block">
             {email.confidence !== null ? `${email.confidence}%` : "--"}
           </span>
           <Badge variant="secondary" className={`text-[10px] uppercase truncate lg:w-[100px] justify-center ${statusColors[email.status] || statusColors.PENDING}`}>
-            {email.status}
+            {formatDisplayLabel(email.status)}
           </Badge>
         </div>
         
