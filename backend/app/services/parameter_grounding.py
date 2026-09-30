@@ -582,7 +582,7 @@ def _date_is_grounded(
     body: str,
     reference_time: datetime | None = None,
 ) -> bool:
-    if due_date in body:
+    if due_date.lower() in body.lower():
         return True
 
     match = re.fullmatch(

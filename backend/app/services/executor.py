@@ -388,6 +388,7 @@ class ActionExecutor:
 
         account = (
             db.query(GoogleAccount)
+            .filter(GoogleAccount.user_id == email.user_id)
             .first()
         )
 
