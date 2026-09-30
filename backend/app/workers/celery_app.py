@@ -5,14 +5,16 @@ from celery.schedules import crontab
 from celery.signals import worker_ready, beat_init
 
 from app.core.settings import settings
-from app.core.redis import get_celery_ssl_config
+from app.core.redis import get_celery_ssl_config, _clean_redis_url
 
 logger = logging.getLogger(__name__)
 
+_broker_url = _clean_redis_url(settings.redis_url)
+
 celery_app = Celery(
     "inboxpilot",
-    broker=settings.redis_url,
-    backend=settings.redis_url,
+    broker=_broker_url,
+    backend=_broker_url,
     include=["app.workers.tasks"],
 )
 

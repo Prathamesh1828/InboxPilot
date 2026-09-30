@@ -11,7 +11,7 @@ their own ``redis.Redis`` instances.
 
 import logging
 import ssl as _ssl
-from urllib.parse import urlparse
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
 import redis
 
@@ -29,15 +29,36 @@ def _is_tls_url(url: str) -> bool:
     return urlparse(url).scheme == "rediss"
 
 
+def _clean_redis_url(url: str) -> str:
+    """
+    Strip ``ssl_cert_reqs`` from the URL query string.
+
+    Upstash and some providers append ``?ssl_cert_reqs=CERT_NONE`` to
+    the URL. redis-py cannot parse this literal and raises
+    ``Invalid SSL Certificate Requirements Flag: CERT_NONE``.
+
+    We handle SSL configuration separately via ``_build_redis_kwargs``,
+    so it is safe to remove the parameter from the URL itself.
+    """
+    parsed = urlparse(url)
+    if not parsed.query:
+        return url
+
+    params = parse_qs(parsed.query)
+    params.pop("ssl_cert_reqs", None)
+
+    clean_query = urlencode(params, doseq=True)
+    return urlunparse(parsed._replace(query=clean_query))
+
+
 def _build_redis_kwargs(url: str) -> dict:
     """
     Return extra keyword arguments for ``redis.Redis.from_url`` when
     the URL requires TLS.
 
-    Render's managed Redis (Key-Value) uses internal certificates that
-    are not in the default system trust store, so we disable certificate
-    verification.  This is safe because the traffic stays within
-    Render's private network.
+    Managed Redis providers (Upstash, Render Key-Value, etc.) use
+    internal certificates that are not in the default system trust
+    store, so we disable certificate verification.
 
     For plain ``redis://`` URLs an empty dict is returned.
     """
@@ -59,9 +80,10 @@ def get_redis_client(*, decode_responses: bool = True) -> redis.Redis:
     Most callers should use the module-level ``redis_client`` singleton
     instead of calling this function directly.
     """
+    clean_url = _clean_redis_url(settings.redis_url)
     extra = _build_redis_kwargs(settings.redis_url)
     client = redis.Redis.from_url(
-        settings.redis_url,
+        clean_url,
         decode_responses=decode_responses,
         **extra,
     )
