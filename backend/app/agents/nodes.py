@@ -226,6 +226,8 @@ def execute_node(
             "execution_result": result,
         }
     except Exception as exc:
+        from app.repositories.email_repository import get_email_by_id, update_email_status
+
         log_audit_event(
             db=db,
             email_id=state.email_id,
@@ -233,7 +235,17 @@ def execute_node(
             action=action_plan.action.value,
             details={"error": str(exc)},
         )
-        raise
+
+        # Persist the error to the email record so the frontend can show it
+        email = get_email_by_id(db, state.email_id)
+        if email:
+            email.error_message = str(exc)
+            update_email_status(db, email, "FAILED")
+
+        return {
+            "workflow_status": "COMPLETED",
+            "error": str(exc),
+        }
 
 
 def approval_node(

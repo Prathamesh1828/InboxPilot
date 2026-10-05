@@ -93,6 +93,24 @@ class ActionExecutor:
         )
 
     @staticmethod
+    def _get_google_account_for_email(db: Session, email) -> GoogleAccount | None:
+        """Find the correct Google Account that received this email."""
+        accounts = db.query(GoogleAccount).filter(GoogleAccount.user_id == email.user_id).all()
+        if not accounts:
+            return None
+            
+        # Try to match the receiving account by looking at the email's recipients
+        for account in accounts:
+            if account.email:
+                acc_email = account.email.lower()
+                for rec in email.recipients:
+                    if acc_email in rec.lower():
+                        return account
+                        
+        # Fallback to the first account if we couldn't match exactly (e.g., BCC'd)
+        return accounts[0]
+
+    @staticmethod
     def _log_bill(
         plan: BillActionPlan,
         db: Session | None,
@@ -292,11 +310,7 @@ class ActionExecutor:
                 "Calendar event end time must be after start time."
             )
 
-        account = (
-            db.query(GoogleAccount)
-            .filter(GoogleAccount.user_id == email.user_id)
-            .first()
-        )
+        account = ActionExecutor._get_google_account_for_email(db, email)
 
         if account is None:
             raise ValueError(
@@ -344,11 +358,7 @@ class ActionExecutor:
                 f"Email {email_id} not found."
             )
 
-        account = (
-            db.query(GoogleAccount)
-            .filter(GoogleAccount.user_id == email.user_id)
-            .first()
-        )
+        account = ActionExecutor._get_google_account_for_email(db, email)
 
         if account is None:
             raise ValueError(
@@ -405,11 +415,7 @@ class ActionExecutor:
                 f"Email {email_id} not found."
             )
 
-        account = (
-            db.query(GoogleAccount)
-            .filter(GoogleAccount.user_id == email.user_id)
-            .first()
-        )
+        account = ActionExecutor._get_google_account_for_email(db, email)
 
         if account is None:
             raise ValueError(

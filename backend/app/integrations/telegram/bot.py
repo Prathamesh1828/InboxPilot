@@ -96,7 +96,9 @@ def answer_callback_query(
     }
 
     try:
-        httpx.post(url, json=payload, timeout=5.0)
+        resp = httpx.post(url, json=payload, timeout=5.0)
+        if not resp.is_success:
+            logger.error("answerCallbackQuery failed: %s %s", resp.status_code, resp.text)
     except Exception as e:
         logger.error("Failed to answer callback query: %s", e)
 
@@ -121,6 +123,8 @@ def edit_message_text(
     }
 
     try:
-        httpx.post(url, json=payload, timeout=5.0)
+        resp = httpx.post(url, json=payload, timeout=5.0)
+        if not resp.is_success:
+            logger.error("editMessageText failed: %s %s", resp.status_code, resp.text)
     except Exception as e:
         logger.error("Failed to edit message text: %s", e)

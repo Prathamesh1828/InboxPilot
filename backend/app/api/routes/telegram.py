@@ -99,6 +99,11 @@ async def telegram_webhook(
     chat_id = str(message.get("chat", {}).get("id"))
     original_text = message.get("text", "")
 
+    logger.info(
+        "Telegram callback received: data=%s, chat_id=%s, query_id=%s",
+        callback_data, chat_id, query_id,
+    )
+
     if not callback_data.startswith(("approve_", "reject_")):
         if query_id:
             answer_callback_query(query_id, "Unknown action.")
@@ -152,7 +157,7 @@ async def telegram_webhook(
         if message_id and chat_id:
             # Strip out the question and append the result status
             new_text = original_text.replace("Do you approve this action?", "")
-            new_text += f"\n*Status:* {status_text}"
+            new_text += f"\n<b>Status:</b> {status_text}"
             edit_message_text(chat_id, message_id, new_text)
 
     except ValueError as exc:
@@ -163,7 +168,7 @@ async def telegram_webhook(
             
         if message_id and chat_id:
             new_text = original_text.replace("Do you approve this action?", "")
-            new_text += f"\n*Status:* ⚠️ Error: {str(exc)}"
+            new_text += f"\n<b>Status:</b> ⚠️ Error: {str(exc)}"
             edit_message_text(chat_id, message_id, new_text)
 
     except Exception as exc:

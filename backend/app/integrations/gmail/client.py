@@ -8,6 +8,7 @@ from google.auth.exceptions import RefreshError
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 from sqlalchemy.orm import Session
 
 from app.core.settings import settings
@@ -132,6 +133,15 @@ def archive_email(
                 "removeLabelIds": ["INBOX"],
             },
         ).execute()
+    except HttpError as exc:
+        if exc.resp.status == 404:
+            # Message is already gone from Gmail (deleted or expunged).
+            # The goal of archiving is to remove it from the inbox,
+            # so this is effectively a success.
+            return message_id
+        raise RuntimeError(
+            f"Gmail API error while archiving message {message_id}: {exc}"
+        ) from exc
     except Exception as exc:
         raise RuntimeError(
             f"Gmail API error while archiving message {message_id}: {exc}"
