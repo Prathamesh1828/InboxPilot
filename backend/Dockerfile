@@ -22,4 +22,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Run the API server by default
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Shell form is used (instead of exec/JSON form) so that the $PORT
+# environment variable provided by Railway is expanded at runtime.
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
