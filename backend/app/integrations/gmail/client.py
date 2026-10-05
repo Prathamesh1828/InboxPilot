@@ -138,11 +138,23 @@ def archive_email(
             # Message is already gone from Gmail (deleted or expunged).
             # The goal of archiving is to remove it from the inbox,
             # so this is effectively a success.
+            logger.info(
+                "Message %s not found in Gmail (404) — treating archive as success.",
+                message_id,
+            )
             return message_id
         raise RuntimeError(
             f"Gmail API error while archiving message {message_id}: {exc}"
         ) from exc
     except Exception as exc:
+        # Some builds of googleapiclient surface HttpError as a plain Exception.
+        # Check the string representation for a 404 before re-raising.
+        if "404" in str(exc) and "notFound" in str(exc):
+            logger.info(
+                "Message %s not found in Gmail (404 via generic exc) — treating archive as success.",
+                message_id,
+            )
+            return message_id
         raise RuntimeError(
             f"Gmail API error while archiving message {message_id}: {exc}"
         ) from exc

@@ -84,7 +84,9 @@ async def telegram_webhook(
             except Exception as e:
                 logger.error("Error connecting Telegram account: %s", e)
                 _send_text_message(chat_id, "❌ *An unexpected error occurred.*")
-        
+        elif text.strip() == "/start":
+            _send_text_message(chat_id, "ℹ️ *Please use the 'Connect Telegram' button in your InboxPilot dashboard to connect your account.*")
+            
         return {"status": "ok"}
 
     # 2. Handle callback queries (Approve/Reject)
