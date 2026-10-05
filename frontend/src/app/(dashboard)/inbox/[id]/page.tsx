@@ -361,7 +361,20 @@ export default function EmailDetailPage({ params }: { params: Promise<{ id: stri
                     <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold mb-1">Execution Failed</p>
-                      <p className="opacity-90 whitespace-pre-wrap break-words">{email.error_message}</p>
+                      {email.error_message.includes('REAUTH_REQUIRED') ? (
+                        <>
+                          <p className="opacity-90 mb-3 whitespace-pre-wrap break-words">
+                            Your Google connection has expired. You need to reconnect your account to continue processing actions.
+                          </p>
+                          <Link href="/integrations">
+                            <Button variant="outline" size="sm" className="border-destructive/30 text-destructive hover:bg-destructive/20 mt-1">
+                              Reconnect Google Account
+                            </Button>
+                          </Link>
+                        </>
+                      ) : (
+                        <p className="opacity-90 whitespace-pre-wrap break-words">{email.error_message}</p>
+                      )}
                     </div>
                   </div>
                 ) : email.execution_result ? (

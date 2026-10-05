@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from email.mime.text import MIMEText
 from typing import Any
 
+from google.auth.exceptions import RefreshError
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
@@ -60,6 +61,11 @@ def get_google_credentials(
     if needs_refresh and credentials.refresh_token:
         try:
             credentials.refresh(Request())
+        except RefreshError as refresh_exc:
+            account.access_token = ""
+            account.refresh_token = None
+            db.commit()
+            raise Exception("REAUTH_REQUIRED: Your Google session expired. Please reconnect your account.") from refresh_exc
         except Exception as refresh_exc:
             raise RuntimeError(
                 f"Failed to refresh Google token for integration "
