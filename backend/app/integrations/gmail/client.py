@@ -134,7 +134,8 @@ def archive_email(
             },
         ).execute()
     except HttpError as exc:
-        if exc.resp.status == 404:
+        status = getattr(exc, "status_code", getattr(exc.resp, "status", None))
+        if str(status) == "404" or ("404" in str(exc) and "notFound" in str(exc)):
             # Message is already gone from Gmail (deleted or expunged).
             # The goal of archiving is to remove it from the inbox,
             # so this is effectively a success.
